@@ -23,6 +23,10 @@ import NotFound from "./pages/not-found";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserDetails from "./pages/admin/UserDetails";
 import AppointmentManager from "./pages/admin/AppointmentManager";
+import ContentViewer from "./pages/admin/ContentViewer";
+import VerificationQueue from "./pages/admin/VerificationQueue";
+import BillingManagement from "./pages/admin/BillingManagement";
+import AdminMessaging from "./pages/admin/Messaging";
 import { ThemeProvider } from "next-themes";
 import { AdminRoute } from "./lib/admin-route";
 import { OnboardingProvider } from "./hooks/use-onboarding";
@@ -195,6 +199,30 @@ function Router() {
       <AdminRoute path="/admin/appointments" component={() => (
         <SidebarLayout>
           <AppointmentManager />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/content-viewer" component={() => (
+        <SidebarLayout>
+          <ContentViewer />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/verification-queue" component={() => (
+        <SidebarLayout>
+          <VerificationQueue />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/billing-management" component={() => (
+        <SidebarLayout>
+          <BillingManagement />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/messaging" component={() => (
+        <SidebarLayout>
+          <AdminMessaging />
         </SidebarLayout>
       )} />
 
