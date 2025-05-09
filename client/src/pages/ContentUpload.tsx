@@ -89,34 +89,59 @@ export default function ContentUpload() {
       </div>
 
       {/* Content Upload Form (togglable) */}
-      {showUploader && <ContentUploader />}
+      {showUploader && <ContentUploader onUploadSuccess={onUploadSuccess} />}
 
       {/* Uploaded Content */}
       <div className="bg-background-card rounded-xl shadow-md p-6">
         <h2 className="text-xl font-semibold text-white mb-6">Recent Uploads</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recentUploads.map((content) => (
-            <ContentCard 
-              key={content.id}
-              content={content}
-              onView={(content) => setViewingContent(content)}
-              onEdit={(content) => {
-                toast({
-                  title: "Edit not implemented",
-                  description: "Editing functionality would be implemented in a production app.",
-                });
-              }}
-              onDelete={(content) => setContentToDelete(content)}
-            />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center p-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-gray-400">Loading your content...</span>
+          </div>
+        ) : isError ? (
+          <div className="text-center p-10">
+            <p className="text-red-500">Error loading content. Please try again.</p>
+            <Button 
+              variant="outline" 
+              className="mt-4"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/content'] })}
+            >
+              Retry
+            </Button>
+          </div>
+        ) : userContent && userContent.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {userContent.map((content) => (
+              <ContentCard 
+                key={content.id}
+                content={content}
+                onView={(content) => setViewingContent(content)}
+                onEdit={(content) => {
+                  toast({
+                    title: "Edit not implemented",
+                    description: "Editing functionality would be implemented in a production app.",
+                  });
+                }}
+                onDelete={(content) => setContentToDelete(content)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center p-10 border border-dashed border-gray-700 rounded-lg">
+            <p className="text-gray-400 mb-4">You haven't uploaded any content yet.</p>
+            <Button onClick={() => setShowUploader(true)}>Upload Your First Content</Button>
+          </div>
+        )}
         
-        <div className="mt-6 text-center">
-          <Button variant="link" className="text-primary">
-            View All Uploads
-          </Button>
-        </div>
+        {userContent && userContent.length > 0 && (
+          <div className="mt-6 text-center">
+            <Button variant="link" className="text-primary">
+              View All Uploads
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Content Viewing Dialog */}

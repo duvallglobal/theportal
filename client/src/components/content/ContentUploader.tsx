@@ -30,7 +30,11 @@ const contentUploadSchema = z.object({
 
 type ContentUploadFormValues = z.infer<typeof contentUploadSchema>;
 
-export function ContentUploader() {
+interface ContentUploaderProps {
+  onUploadSuccess?: () => void;
+}
+
+export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
   const [files, setFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -154,6 +158,11 @@ export function ContentUploader() {
       // Reset form
       form.reset();
       setFiles([]);
+      
+      // Call the onUploadSuccess callback if provided
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
       
     } catch (error) {
       toast({
