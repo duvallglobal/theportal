@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "./lib/context/AuthContext";
+import { useAuth, AuthProvider } from "./lib/context/AuthContext";
 import SidebarLayout from "./components/layouts/SidebarLayout";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
@@ -14,6 +14,8 @@ import Billing from "./pages/Billing";
 import Appointments from "./pages/Appointments";
 import Messages from "./pages/Messages";
 import RentMen from "./pages/RentMen";
+import SignIn from "./pages/auth/SignIn";
+import SignUp from "./pages/auth/SignUp";
 import NotFound from "./pages/not-found";
 import { ThemeProvider } from "next-themes";
 
@@ -64,89 +66,10 @@ function Router() {
     <Switch>
       {/* Auth Routes */}
       <Route path="/sign-in">
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-          <div className="w-full max-w-md p-6 space-y-6 bg-card rounded-lg shadow-md">
-            <h1 className="text-2xl font-bold text-center">Sign In</h1>
-            <form className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
-                <input 
-                  id="email"
-                  type="email"
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                  placeholder="email@example.com" 
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
-                <input 
-                  id="password"
-                  type="password" 
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                  placeholder="••••••••" 
-                />
-              </div>
-              <button 
-                type="button" 
-                className="w-full py-2 px-4 bg-primary text-white rounded-md"
-                onClick={() => console.log('Sign In clicked')}
-              >
-                Sign In
-              </button>
-            </form>
-            <div className="text-center text-sm">
-              Don't have an account? 
-              <a href="/sign-up" className="text-primary ml-1">Sign Up</a>
-            </div>
-          </div>
-        </div>
+        <SignIn />
       </Route>
       <Route path="/sign-up">
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-          <div className="w-full max-w-md p-6 space-y-6 bg-card rounded-lg shadow-md">
-            <h1 className="text-2xl font-bold text-center">Create Account</h1>
-            <form className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="fullName" className="text-sm font-medium">Full Name</label>
-                <input 
-                  id="fullName"
-                  type="text"
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                  placeholder="John Doe" 
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">Email</label>
-                <input 
-                  id="email"
-                  type="email"
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                  placeholder="email@example.com" 
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">Password</label>
-                <input 
-                  id="password"
-                  type="password" 
-                  className="w-full px-3 py-2 border rounded-md bg-background"
-                  placeholder="••••••••" 
-                />
-              </div>
-              <button 
-                type="button" 
-                className="w-full py-2 px-4 bg-primary text-white rounded-md"
-                onClick={() => console.log('Sign Up clicked')}
-              >
-                Create Account
-              </button>
-            </form>
-            <div className="text-center text-sm">
-              Already have an account? 
-              <a href="/sign-in" className="text-primary ml-1">Sign In</a>
-            </div>
-          </div>
-        </div>
+        <SignUp />
       </Route>
       
       {/* Protected Client Routes */}
@@ -237,10 +160,12 @@ function App() {
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <Router />
-          <Toaster />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Router />
+            <Toaster />
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );
