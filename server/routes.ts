@@ -48,19 +48,32 @@ if (twilioAccountSid && twilioAuthToken && twilioAccountSid.startsWith('AC')) {
   console.warn("Twilio credentials missing or invalid. SMS functionality will be unavailable.");
 }
 
-// Configure file uploads
-const uploadDir = path.join(process.cwd(), "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Configure file uploads with personalized user directories
+const baseUploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(baseUploadDir)) {
+  fs.mkdirSync(baseUploadDir, { recursive: true });
 }
 
 const storage_multer = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadDir);
+    // Create user-specific directory if authenticated
+    if (req.user && req.user.id) {
+      const userDir = path.join(baseUploadDir, `user_${req.user.id}`);
+      if (!fs.existsSync(userDir)) {
+        fs.mkdirSync(userDir, { recursive: true });
+      }
+      cb(null, userDir);
+    } else {
+      // Fallback to base upload directory if no user ID (should never happen with validateSession)
+      cb(null, baseUploadDir);
+    }
   },
   filename: function (req, file, cb) {
+    // Create a secure filename with content type prefix for better organization
+    const contentTypePrefix = file.mimetype.startsWith('image/') ? 'img' : 'vid';
+    const sanitizedOriginalName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+    cb(null, `${contentTypePrefix}-${uniqueSuffix}-${sanitizedOriginalName}`);
   },
 });
 
@@ -569,22 +582,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const file of files) {
         const fileType = file.mimetype.startsWith("image/") ? "image" : "video";
         
-        // In a real app, you would upload this to a secure storage service
-        // and store the URL reference instead of the local path
+        // Store the path to the uploaded file in the user's specific directory
         const storagePath = file.path;
         
+        // Generate a thumbnail path for images (in a real app, you would generate thumbnails)
+        const thumbnailPath = file.mimetype.startsWith("image/") 
+          ? storagePath 
+          : undefined;
+        
+        // Create the media file record with user-specific path
         const mediaFile = await storage.createMediaFile({
           userId: req.user.id,
           title: caption || file.originalname,
           description: caption || "",
           fileType,
           storagePath,
+          thumbnailPath,
           status: "pending",
           scheduledDate: scheduled && scheduledDate ? new Date(scheduledDate) : undefined,
-          tags: tags ? JSON.parse(tags) : []
+          tags: tags ? (typeof tags === 'string' ? JSON.parse(tags) : tags) : []
         });
         
         uploadedFiles.push(mediaFile);
+      }
+      
+      // Create a notification for admins about new content uploaded
+      const admins = await storage.getAllUsers().then(users => users.filter(user => user.role === 'admin'));
+      for (const admin of admins) {
+        await storage.createNotification({
+          userId: admin.id,
+          type: "content",
+          content: `New content uploaded by ${req.user.username} for review.`,
+          deliveryMethod: "in-app",
+          read: false
+        });
       }
       
       res.status(201).json({
@@ -593,6 +624,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error("Content upload error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get user's own content files
+  app.get("/api/content", validateSession, async (req, res) => {
+    try {
+      const mediaFiles = await storage.getMediaFilesByUserId(req.user.id);
+      
+      // Map to safe URLs and exclude sensitive path information
+      const safeMediaFiles = mediaFiles.map(file => ({
+        id: file.id,
+        title: file.title,
+        description: file.description,
+        fileType: file.fileType,
+        status: file.status,
+        uploadDate: file.uploadDate,
+        scheduledDate: file.scheduledDate,
+        tags: file.tags,
+        // Create web-accessible URLs instead of filesystem paths
+        url: `/api/content/file/${file.id}`,
+        thumbnailUrl: file.thumbnailPath ? `/api/content/thumbnail/${file.id}` : undefined
+      }));
+      
+      res.json(safeMediaFiles);
+    } catch (error) {
+      console.error("Get content error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Secure file serving routes - only allows access to authorized files
+  app.get("/api/content/file/:id", validateSession, async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.id);
+      const mediaFile = await storage.getMediaFile(fileId);
+      
+      if (!mediaFile) {
+        return res.status(404).json({ message: "File not found" });
+      }
+      
+      // Access control: Only allow access to user's own files or admin access
+      if (mediaFile.userId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized access to this file" });
+      }
+      
+      // Serve the file
+      res.sendFile(mediaFile.storagePath);
+      
+    } catch (error) {
+      console.error("Serve content file error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Secure thumbnail serving
+  app.get("/api/content/thumbnail/:id", validateSession, async (req, res) => {
+    try {
+      const fileId = parseInt(req.params.id);
+      const mediaFile = await storage.getMediaFile(fileId);
+      
+      if (!mediaFile || !mediaFile.thumbnailPath) {
+        return res.status(404).json({ message: "Thumbnail not found" });
+      }
+      
+      // Access control: Only allow access to user's own files or admin access
+      if (mediaFile.userId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized access to this thumbnail" });
+      }
+      
+      // Serve the thumbnail
+      res.sendFile(mediaFile.thumbnailPath);
+      
+    } catch (error) {
+      console.error("Serve thumbnail error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

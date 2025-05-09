@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ContentUploader } from '@/components/content/ContentUploader';
 import { ContentCard, ContentItem } from '@/components/content/ContentCard';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 
 export default function ContentUpload() {
   const [showUploader, setShowUploader] = useState(false);
@@ -20,34 +22,25 @@ export default function ContentUpload() {
   const [contentToDelete, setContentToDelete] = useState<ContentItem | null>(null);
   const { toast } = useToast();
 
-  // Example content items (would come from API in a real app)
-  const recentUploads: ContentItem[] = [
-    {
-      id: '1',
-      title: 'Profile Update',
-      description: 'New profile photos for OnlyFans main page',
-      status: 'approved',
-      uploadedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      thumbnailUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400'
+  // Fetch user's uploaded content using React Query
+  const { data: userContent, isLoading, isError, error } = useQuery({
+    queryKey: ['/api/content'],
+    queryFn: async () => {
+      const response = await apiRequest('GET', '/api/content');
+      const data = await response.json();
+      return data.map((item: any) => ({
+        id: item.id.toString(),
+        title: item.title,
+        description: item.description || '',
+        status: item.status,
+        uploadedAt: new Date(item.uploadDate),
+        scheduledDate: item.scheduledDate ? new Date(item.scheduledDate) : undefined,
+        thumbnailUrl: item.thumbnailUrl || '/placeholder-image.png', // Fallback image
+        fileType: item.fileType,
+        url: item.url
+      }));
     },
-    {
-      id: '2',
-      title: 'Behind the Scenes',
-      description: 'Video clip from recent photo shoot',
-      status: 'processing',
-      uploadedAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      thumbnailUrl: 'https://pixabay.com/get/g89d730ffe5c72442af87a1042028ac4515de07e962264d448254d362ef91bc7cae692807aa27a838d1b331d8b2218ce02a3556c6b2bdac2468a766335be2c294_1280.jpg'
-    },
-    {
-      id: '3',
-      title: 'Summer Collection',
-      description: 'Set of 12 photos for summer promotion',
-      status: 'scheduled',
-      uploadedAt: new Date(),
-      scheduledDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // in 2 days
-      thumbnailUrl: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400'
-    }
-  ];
+  });
 
   // Handler for content deletion
   const handleDeleteContent = async () => {
@@ -57,12 +50,15 @@ export default function ContentUpload() {
       // Delete the content via API
       await apiRequest('DELETE', `/api/content/${contentToDelete.id}`, {});
       
+      // Invalidate the content query to refresh the data
+      queryClient.invalidateQueries({ queryKey: ['/api/content'] });
+      
       toast({
         title: "Content deleted",
         description: "The content has been successfully deleted.",
       });
       
-      // Close the dialog and refresh content
+      // Close the dialog
       setContentToDelete(null);
       
     } catch (error) {
@@ -72,6 +68,12 @@ export default function ContentUpload() {
         variant: "destructive",
       });
     }
+  };
+  
+  // When a file is successfully uploaded, refresh the content list
+  const onUploadSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/content'] });
+    setShowUploader(false);
   };
 
   return (
