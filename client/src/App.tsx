@@ -18,6 +18,7 @@ import RentMen from "./pages/RentMen";
 import Analytics from "./pages/Analytics";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
+import AuthPage from "./pages/auth-page";
 import NotFound from "./pages/not-found";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserDetails from "./pages/admin/UserDetails";
@@ -29,6 +30,28 @@ import { OnboardingTooltipContainer } from "./components/ui/onboarding-tooltip";
 import { HelpButton } from "./components/ui/help-button";
 import { MessagingProvider } from "./lib/context/MessagingProvider";
 
+// Component to handle root path redirects
+function RootRedirect() {
+  const { user, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+  
+  useEffect(() => {
+    if (!isLoading) {
+      if (user) {
+        navigate('/dashboard');
+      } else {
+        navigate('/auth');
+      }
+    }
+  }, [user, isLoading, navigate]);
+  
+  return (
+    <div className="flex h-screen w-full items-center justify-center">
+      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+}
+
 // Auth wrapper to protect routes
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
@@ -36,7 +59,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     if (!isLoading && !user) {
-      navigate("/sign-in");
+      navigate("/auth");
     }
   }, [user, isLoading, navigate]);
   
@@ -63,6 +86,9 @@ function Router() {
   return (
     <Switch>
       {/* Auth Routes */}
+      <Route path="/auth">
+        <AuthPage />
+      </Route>
       <Route path="/sign-in">
         <SignIn />
       </Route>
@@ -162,13 +188,9 @@ function Router() {
         </SidebarLayout>
       )} />
 
-      {/* Redirect from root to dashboard */}
+      {/* Redirect from root to auth or dashboard */}
       <Route path="/">
-        <ProtectedRoute>
-          <SidebarLayout>
-            <Dashboard />
-          </SidebarLayout>
-        </ProtectedRoute>
+        <RootRedirect />
       </Route>
 
       {/* 404 Fallback */}
