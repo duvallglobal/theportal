@@ -28,6 +28,8 @@ import VerificationQueue from "./pages/admin/VerificationQueue";
 import BillingManagement from "./pages/admin/BillingManagement";
 import AdminMessaging from "./pages/admin/Messaging";
 import ClientsManagement from "./pages/admin/ClientsManagement";
+import TemplateManagement from "./pages/admin/TemplateManagement";
+import CommunicationHistory from "./pages/admin/CommunicationHistory";
 import { ThemeProvider } from "next-themes";
 import { AdminRoute } from "./lib/admin-route";
 import { OnboardingProvider } from "./hooks/use-onboarding";
@@ -230,6 +232,18 @@ function Router() {
       <AdminRoute path="/admin/clients" component={() => (
         <SidebarLayout>
           <ClientsManagement />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/templates" component={() => (
+        <SidebarLayout>
+          <TemplateManagement />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/communication-history" component={() => (
+        <SidebarLayout>
+          <CommunicationHistory />
         </SidebarLayout>
       )} />
 

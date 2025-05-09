@@ -14,6 +14,8 @@ import {
   LogOut,
   X,
   LineChart,
+  FileText,
+  History,
 } from "lucide-react";
 // We'll replace Clerk's UserButton with our own user dropdown
 import { ChevronDown } from "lucide-react";
@@ -79,6 +81,16 @@ export function Sidebar({
       path: "/admin/messaging",
       icon: <MessageSquare className="w-5 h-5 mr-3" />,
       badge: 3,
+    },
+    {
+      name: "Communication Templates",
+      path: "/admin/templates",
+      icon: <FileText className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Communication History",
+      path: "/admin/communication-history",
+      icon: <History className="w-5 h-5 mr-3" />,
     },
   ];
 
