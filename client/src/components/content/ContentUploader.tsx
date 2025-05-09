@@ -1,9 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -17,15 +15,13 @@ import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { cn } from '@/lib/utils';
-import { CloudUpload, Image, Video, History, Plus } from 'lucide-react';
+import { CloudUpload, Image, Video, X } from 'lucide-react';
 
+// Simplified schema to match the user's requirement:
+// upload, tag, platform, submit with preview
 const contentUploadSchema = z.object({
-  contentType: z.enum(['photo', 'video', 'story', 'other']),
   platform: z.string().min(1, { message: 'Platform is required' }),
-  caption: z.string().optional(),
   tags: z.string().optional(),
-  scheduled: z.boolean().optional(),
-  scheduledDate: z.string().optional(),
 });
 
 type ContentUploadFormValues = z.infer<typeof contentUploadSchema>;
@@ -39,26 +35,35 @@ export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const form = useForm<ContentUploadFormValues>({
     resolver: zodResolver(contentUploadSchema),
     defaultValues: {
-      contentType: 'photo',
       platform: 'OnlyFans',
-      caption: '',
       tags: '',
-      scheduled: false,
     },
   });
 
-  const contentTypeOptions = [
-    { value: 'photo', label: 'Photos', icon: <Image className="h-4 w-4 mr-2" /> },
-    { value: 'video', label: 'Videos', icon: <Video className="h-4 w-4 mr-2" /> },
-    { value: 'story', label: 'Stories', icon: <History className="h-4 w-4 mr-2" /> },
-    { value: 'other', label: 'Other', icon: <Plus className="h-4 w-4 mr-2" /> },
-  ];
+  // Generate previews for uploaded files
+  useEffect(() => {
+    // Clean up existing preview URLs
+    const urlsToRevoke = previewUrls;
+    
+    // Create new preview URLs
+    const newPreviewUrls = files.map(file => URL.createObjectURL(file));
+    setPreviewUrls(newPreviewUrls);
+    
+    // Cleanup function to revoke object URLs when component unmounts
+    return () => {
+      // Revoke old URLs
+      urlsToRevoke.forEach(url => URL.revokeObjectURL(url));
+      // Revoke new URLs on unmount
+      newPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [files]);
 
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +101,12 @@ export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
     const newFiles = [...files];
     newFiles.splice(index, 1);
     setFiles(newFiles);
+    
+    // Also remove preview URL
+    URL.revokeObjectURL(previewUrls[index]);
+    const newPreviewUrls = [...previewUrls];
+    newPreviewUrls.splice(index, 1);
+    setPreviewUrls(newPreviewUrls);
   };
 
   // Submit form
@@ -116,23 +127,16 @@ export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
       // Create a FormData instance to send files
       const formData = new FormData();
       
-      // Append form data
-      formData.append('contentType', data.contentType);
+      // Append form data (only platform and tags as per user request)
       formData.append('platform', data.platform);
-      formData.append('caption', data.caption || '');
       formData.append('tags', data.tags || '');
-      formData.append('scheduled', data.scheduled ? 'true' : 'false');
-      
-      if (data.scheduled && data.scheduledDate) {
-        formData.append('scheduledDate', data.scheduledDate);
-      }
       
       // Append all files
       files.forEach((file, index) => {
         formData.append(`file${index}`, file);
       });
 
-      // Simulate progress updates (in a real app, you'd track actual upload progress)
+      // Simulate progress updates
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 95) {
@@ -176,69 +180,17 @@ export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
     }
   };
 
-  const watchScheduled = form.watch('scheduled');
-
   return (
     <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
       <h2 className="text-xl font-semibold text-white mb-4">Upload New Content</h2>
       
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <div className="mb-6">
-          <Label className="block text-white font-medium mb-2">Content Type</Label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {contentTypeOptions.map((option) => (
-              <div key={option.value} className="flex items-center">
-                <input
-                  type="radio"
-                  id={option.value}
-                  value={option.value}
-                  {...form.register('contentType')}
-                  className="hidden peer"
-                />
-                <Label
-                  htmlFor={option.value}
-                  className={cn(
-                    "bg-background-lighter text-gray-300 px-4 py-2 rounded-lg w-full text-center cursor-pointer transition-colors flex justify-center items-center",
-                    form.watch('contentType') === option.value && "bg-primary text-white"
-                  )}
-                >
-                  {option.icon} {option.label}
-                </Label>
-              </div>
-            ))}
-          </div>
-          {form.formState.errors.contentType && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.contentType.message}</p>
-          )}
-        </div>
-        
-        <div className="mb-6">
-          <Label htmlFor="platform" className="block text-white font-medium mb-2">Platform</Label>
-          <Select 
-            onValueChange={(value) => form.setValue('platform', value)} 
-            defaultValue={form.getValues('platform')}
-          >
-            <SelectTrigger className="w-full bg-background-lighter text-gray-300 rounded-lg">
-              <SelectValue placeholder="Select platform" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="OnlyFans">OnlyFans</SelectItem>
-              <SelectItem value="Instagram">Instagram</SelectItem>
-              <SelectItem value="TikTok">TikTok</SelectItem>
-              <SelectItem value="Twitter">Twitter/X</SelectItem>
-              <SelectItem value="Reddit">Reddit</SelectItem>
-            </SelectContent>
-          </Select>
-          {form.formState.errors.platform && (
-            <p className="text-red-500 text-sm mt-1">{form.formState.errors.platform.message}</p>
-          )}
-        </div>
-        
+        {/* File Upload Area */}
         <div className="mb-6">
           <Label className="block text-white font-medium mb-2">Content Files</Label>
           <div 
             className={cn(
-              "border-2 border-dashed border-gray-600 rounded-lg p-10 text-center",
+              "border-2 border-dashed border-gray-600 rounded-lg p-6 text-center",
               dragActive && "border-primary bg-primary bg-opacity-5",
               files.length > 0 && "border-green-500 bg-green-500 bg-opacity-5"
             )}
@@ -268,50 +220,66 @@ export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
               className="hidden"
             />
           </div>
-          
-          {/* File preview list */}
-          {files.length > 0 && (
-            <div className="mt-4">
-              <h4 className="text-white font-medium mb-2">Selected Files ({files.length})</h4>
-              <ul className="space-y-2">
-                {files.map((file, index) => (
-                  <li key={index} className="flex items-center justify-between bg-background-lighter rounded p-2">
-                    <div className="flex items-center">
-                      {file.type.startsWith('image/') ? (
-                        <Image className="h-4 w-4 mr-2 text-blue-400" />
-                      ) : (
-                        <Video className="h-4 w-4 mr-2 text-purple-400" />
-                      )}
-                      <span className="text-gray-300 text-sm truncate max-w-xs">{file.name}</span>
-                      <span className="text-gray-400 text-xs ml-2">({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+        </div>
+        
+        {/* File Previews */}
+        {files.length > 0 && (
+          <div className="mb-6">
+            <Label className="block text-white font-medium mb-2">Preview ({files.length} files)</Label>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {files.map((file, index) => (
+                <div key={index} className="relative group">
+                  {file.type.startsWith('image/') ? (
+                    <img 
+                      src={previewUrls[index]} 
+                      alt={file.name} 
+                      className="rounded-lg object-cover w-full aspect-square"
+                    />
+                  ) : (
+                    <div className="rounded-lg bg-background-lighter w-full aspect-square flex items-center justify-center">
+                      <Video className="h-10 w-10 text-purple-400" />
                     </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      &times;
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => removeFile(index)}
+                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                  <p className="text-xs text-gray-400 mt-1 truncate">{file.name}</p>
+                </div>
+              ))}
             </div>
+          </div>
+        )}
+        
+        {/* Platform Selection */}
+        <div className="mb-6">
+          <Label htmlFor="platform" className="block text-white font-medium mb-2">Platform</Label>
+          <Select 
+            onValueChange={(value) => form.setValue('platform', value)} 
+            defaultValue={form.getValues('platform')}
+          >
+            <SelectTrigger className="w-full bg-background-lighter text-gray-300 rounded-lg">
+              <SelectValue placeholder="Select platform" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="OnlyFans">OnlyFans</SelectItem>
+              <SelectItem value="Instagram">Instagram</SelectItem>
+              <SelectItem value="TikTok">TikTok</SelectItem>
+              <SelectItem value="Twitter">Twitter/X</SelectItem>
+              <SelectItem value="Reddit">Reddit</SelectItem>
+            </SelectContent>
+          </Select>
+          {form.formState.errors.platform && (
+            <p className="text-red-500 text-sm mt-1">{form.formState.errors.platform.message}</p>
           )}
         </div>
         
-        <div className="mb-6">
-          <Label htmlFor="caption" className="block text-white font-medium mb-2">Caption/Description</Label>
-          <Textarea 
-            id="caption"
-            rows={3} 
-            placeholder="Enter a caption for your content..."
-            className="w-full bg-background-lighter text-gray-300 rounded-lg"
-            {...form.register('caption')}
-          />
-        </div>
-        
+        {/* Tags */}
         <div className="mb-6">
           <Label htmlFor="tags" className="block text-white font-medium mb-2">Tags</Label>
           <Input 
@@ -323,27 +291,7 @@ export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
           />
         </div>
         
-        <div className="flex items-center mb-6">
-          <Checkbox 
-            id="scheduled" 
-            className="border-gray-600 bg-background-lighter"
-            onCheckedChange={(checked) => form.setValue('scheduled', checked === true)}
-          />
-          <Label htmlFor="scheduled" className="ml-2 text-white">Schedule for later</Label>
-        </div>
-        
-        {watchScheduled && (
-          <div className="mb-6">
-            <Label htmlFor="scheduledDate" className="block text-white font-medium mb-2">Schedule Date</Label>
-            <Input 
-              id="scheduledDate"
-              type="datetime-local" 
-              className="w-full bg-background-lighter text-gray-300 rounded-lg"
-              {...form.register('scheduledDate')}
-            />
-          </div>
-        )}
-        
+        {/* Upload Progress */}
         {isUploading && (
           <div className="mb-6">
             <div className="w-full bg-background-lighter h-2 rounded-full">
@@ -356,14 +304,8 @@ export function ContentUploader({ onUploadSuccess }: ContentUploaderProps) {
           </div>
         )}
         
-        <div className="flex justify-end space-x-4">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isUploading}
-          >
-            Save Draft
-          </Button>
+        {/* Submit Button */}
+        <div className="flex justify-end">
           <Button
             type="submit"
             disabled={isUploading || files.length === 0}

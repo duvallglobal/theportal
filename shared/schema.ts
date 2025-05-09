@@ -197,11 +197,13 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  onboardingStatus: true,
-  onboardingStep: true,
-  verificationStatus: true,
-  stripeCustomerId: true,
-  stripeSubscriptionId: true,
+}).extend({
+  // Make these fields optional for registration
+  onboardingStatus: z.string().nullable().optional(),
+  onboardingStep: z.number().nullable().optional(),
+  verificationStatus: z.string().nullable().optional(),
+  stripeCustomerId: z.string().nullable().optional(),
+  stripeSubscriptionId: z.string().nullable().optional(),
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({

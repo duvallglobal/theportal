@@ -12,18 +12,21 @@ import connectPgSimple from 'connect-pg-simple';
 
 declare global {
   namespace Express {
-    // Define the User interface for Express session
+    // Define the User interface for Express session - matches database User type
     interface User {
       id: number;
       email: string;
       username: string;
       fullName: string;
+      phone: string | null;
       role: string;
       password: string;
-      onboardingStatus?: string;
-      onboardingStep?: number;
-      plan?: string;
-      stripeCustomerId?: string;
+      onboardingStatus: string | null;
+      onboardingStep: number | null;
+      plan: string | null;
+      verificationStatus: string | null;
+      stripeCustomerId: string | null;
+      stripeSubscriptionId: string | null;
       createdAt: Date;
       updatedAt: Date;
     }

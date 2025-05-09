@@ -81,8 +81,8 @@ const storage_multer = multer.diskStorage({
 const upload = multer({ storage: storage_multer });
 
 // Session validation middleware
-const validateSession = (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated()) {
+const validateSession = (req: Request, res: Response, next: NextFunction) => {
+  if (!req.isAuthenticated() || !req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
   
@@ -190,16 +190,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...validatedData,
         password: hashedPassword,
         onboardingStep: 1, // Always start at step 1
-        onboardingStatus: "in_progress"
+        onboardingStatus: "in_progress",
+        verificationStatus: "pending",
+        stripeCustomerId: null,
+        stripeSubscriptionId: null
       });
       
       // Log the user in
-      req.login(user, (err) => {
+      req.login(user, (err: any) => {
         if (err) {
           console.error("Login after registration error:", err);
           return res.status(500).json({ message: "Failed to create session" });
         }
         
+        // Return only necessary user data (not password)
         res.status(201).json({
           id: user.id,
           username: user.username,
@@ -220,7 +224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: Express.User | false | null, info: any) => {
       if (err) {
         console.error("Login error:", err);
         return res.status(500).json({ message: "Internal server error" });
@@ -230,7 +234,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: info?.message || "Invalid credentials" });
       }
       
-      req.login(user, (err) => {
+      req.login(user, (err: any) => {
         if (err) {
           console.error("Login session error:", err);
           return res.status(500).json({ message: "Failed to create session" });
