@@ -24,7 +24,8 @@ import AppointmentManager from "./pages/admin/AppointmentManager";
 import { ThemeProvider } from "next-themes";
 import { AdminRoute } from "./lib/admin-route";
 import { OnboardingProvider } from "./hooks/use-onboarding";
-import { OnboardingTooltip, OnboardingHelpButton, OnboardingSpotlight } from "./components/ui/onboarding-tooltip";
+import { OnboardingTooltipContainer } from "./components/ui/onboarding-tooltip";
+import { HelpButton } from "./components/ui/help-button";
 
 // Auth wrapper to protect routes
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -176,9 +177,8 @@ function App() {
           <OnboardingProvider>
             <TooltipProvider>
               <Router />
-              <OnboardingTooltip />
-              <OnboardingSpotlight />
-              <OnboardingHelpButton />
+              <OnboardingTooltipContainer />
+              <HelpButton />
               <Toaster />
             </TooltipProvider>
           </OnboardingProvider>

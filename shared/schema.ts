@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, varchar, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -166,6 +166,27 @@ export const rentMenSettings = pgTable("rent_men_settings", {
   availabilityTimes: json("availability_times"),
   receiveBookingAlerts: boolean("receive_booking_alerts").default(true),
   showOnlyVerifiedClients: boolean("show_only_verified_clients").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Analytics Table
+export const analytics = pgTable("analytics", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  totalAppointments: integer("total_appointments").default(0).notNull(),
+  completedAppointments: integer("completed_appointments").default(0),
+  canceledAppointments: integer("canceled_appointments").default(0),
+  engagementRate: numeric("engagement_rate").default("0"),
+  earningsTotal: numeric("earnings_total").default("0"),
+  subscriberCount: integer("subscriber_count").default(0),
+  averageAppointmentDuration: integer("average_appointment_duration").default(0), // in minutes
+  contentUploads: integer("content_uploads").default(0),
+  customMetrics: json("custom_metrics"), // Flexible storage for custom metrics
+  period: text("period").notNull(), // 'weekly', 'monthly', 'all-time'
+  periodStart: timestamp("period_start"),
+  periodEnd: timestamp("period_end"),
+  reportDate: timestamp("report_date").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
