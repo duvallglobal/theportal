@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -35,13 +36,15 @@ export default function Appointments() {
   });
 
   // Display error if fetching appointments fails
-  if (error) {
-    toast({
-      title: "Error",
-      description: "Failed to load appointments. Please try again later.",
-      variant: "destructive",
-    });
-  }
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load appointments. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
 
   // Filter appointments by status
   const pendingAppointments = appointments?.filter((appointment: any) => appointment.status === "pending") || [];

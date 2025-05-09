@@ -2,6 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Onboarding styles */
+.onboarding-target {
+  position: relative;
+  z-index: 50;
+  box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.4);
+  border-radius: 4px;
+  transition: box-shadow 0.3s ease;
+}
+
+/* Extract RGB values from the primary color for shadow effects */
+:root {
+  --primary-rgb: 14, 165, 233; /* sky-500 equivalent */
+}
+
 :root {
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
