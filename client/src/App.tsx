@@ -15,6 +15,7 @@ import Billing from "./pages/Billing";
 import Appointments from "./pages/Appointments";
 import Messages from "./pages/Messages";
 import RentMen from "./pages/RentMen";
+import Analytics from "./pages/Analytics";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import NotFound from "./pages/not-found";
@@ -129,6 +130,14 @@ function Router() {
         <ProtectedRoute>
           <SidebarLayout>
             <RentMen />
+          </SidebarLayout>
+        </ProtectedRoute>
+      </Route>
+      
+      <Route path="/analytics">
+        <ProtectedRoute>
+          <SidebarLayout>
+            <Analytics />
           </SidebarLayout>
         </ProtectedRoute>
       </Route>

@@ -13,6 +13,7 @@ import {
   Users,
   LogOut,
   X,
+  LineChart,
 } from "lucide-react";
 // We'll replace Clerk's UserButton with our own user dropdown
 import { ChevronDown } from "lucide-react";
@@ -89,6 +90,12 @@ export function Sidebar({
       name: "Rent.Men Concierge",
       path: "/rent-men",
       icon: <Bell className="w-5 h-5 mr-3" />,
+      adminOnly: false,
+    },
+    {
+      name: "Analytics",
+      path: "/analytics",
+      icon: <LineChart className="w-5 h-5 mr-3" />,
       adminOnly: false,
     },
     {
