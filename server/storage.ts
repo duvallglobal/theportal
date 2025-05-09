@@ -799,6 +799,60 @@ export class MemStorage implements IStorage {
     this.rentMenSettingsMap.set(id, updatedSettings);
     return updatedSettings;
   }
+  
+  // Analytics methods
+  async getAnalytics(id: number): Promise<Analytics | undefined> {
+    return this.analyticsMap.get(id);
+  }
+  
+  async getAnalyticsByUserId(userId: number): Promise<Analytics[]> {
+    return Array.from(this.analyticsMap.values()).filter(
+      (analytics) => analytics.userId === userId
+    );
+  }
+  
+  async getLatestAnalyticsByUserId(userId: number): Promise<Analytics | undefined> {
+    const userAnalytics = await this.getAnalyticsByUserId(userId);
+    if (userAnalytics.length === 0) {
+      return undefined;
+    }
+    
+    // Sort by report date (newest first) and return the most recent one
+    return userAnalytics.sort((a, b) => 
+      new Date(b.reportDate).getTime() - new Date(a.reportDate).getTime()
+    )[0];
+  }
+  
+  async createAnalytics(analytics: InsertAnalytics): Promise<Analytics> {
+    const id = this.currentIds.analytics++;
+    const now = new Date();
+    const newAnalytics: Analytics = {
+      ...analytics,
+      id,
+      createdAt: now,
+      updatedAt: now,
+      reportDate: now,
+    };
+    this.analyticsMap.set(id, newAnalytics);
+    return newAnalytics;
+  }
+  
+  async updateAnalytics(id: number, analyticsData: Partial<Analytics>): Promise<Analytics> {
+    const analytics = await this.getAnalytics(id);
+    if (!analytics) {
+      throw new Error(`Analytics with ID ${id} not found`);
+    }
+    
+    const updatedAnalytics: Analytics = {
+      ...analytics,
+      ...analyticsData,
+      id,
+      updatedAt: new Date(),
+    };
+    
+    this.analyticsMap.set(id, updatedAnalytics);
+    return updatedAnalytics;
+  }
 }
 
 export const storage = new MemStorage();

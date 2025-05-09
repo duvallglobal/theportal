@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertUserSchema, insertProfileSchema, insertPlatformAccountSchema, insertContentStrategySchema, insertMediaFileSchema, insertVerificationDocumentSchema, insertAppointmentSchema, insertMessageSchema, insertRentMenSettingsSchema } from "@shared/schema";
+import { insertUserSchema, insertProfileSchema, insertPlatformAccountSchema, insertContentStrategySchema, insertMediaFileSchema, insertVerificationDocumentSchema, insertAppointmentSchema, insertMessageSchema, insertRentMenSettingsSchema, insertAnalyticsSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
 import bcrypt from "bcryptjs";
@@ -649,6 +649,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Appointments routes
+  
+  // Analytics routes
+  app.get("/api/analytics", validateSession, async (req, res) => {
+    try {
+      // For clients, return only their own analytics
+      if (req.user.role === "client") {
+        const analytics = await storage.getAnalyticsByUserId(req.user.id);
+        res.json(analytics);
+      } 
+      // For admins, return all analytics
+      else if (req.user.role === "admin") {
+        // Get all users (excluding admin users)
+        const users = (await storage.getAllUsers()).filter(user => user.role === "client");
+        
+        // For each user, get their latest analytics record
+        const allAnalytics = [];
+        for (const user of users) {
+          const analytics = await storage.getLatestAnalyticsByUserId(user.id);
+          if (analytics) {
+            allAnalytics.push({
+              ...analytics,
+              userName: user.fullName,
+              userEmail: user.email
+            });
+          }
+        }
+        
+        res.json(allAnalytics);
+      } else {
+        res.status(403).json({ message: "Unauthorized" });
+      }
+    } catch (error) {
+      console.error("Get analytics error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.get("/api/analytics/:userId", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const analytics = await storage.getAnalyticsByUserId(parseInt(userId));
+      
+      // Get user info to include with analytics
+      const user = await storage.getUser(parseInt(userId));
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({
+        analytics,
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email
+        }
+      });
+    } catch (error) {
+      console.error("Get user analytics error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/analytics/:userId", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const analyticsData = req.body;
+      
+      // Validate input data
+      const validatedData = insertAnalyticsSchema.parse({
+        ...analyticsData,
+        userId: parseInt(userId)
+      });
+      
+      // Create analytics record
+      const analytics = await storage.createAnalytics(validatedData);
+      
+      res.status(201).json(analytics);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Create analytics error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.put("/api/analytics/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const analyticsData = req.body;
+      
+      // Verify analytics record exists
+      const existingAnalytics = await storage.getAnalytics(parseInt(id));
+      if (!existingAnalytics) {
+        return res.status(404).json({ message: "Analytics record not found" });
+      }
+      
+      // Update analytics
+      const updatedAnalytics = await storage.updateAnalytics(parseInt(id), analyticsData);
+      
+      res.json(updatedAnalytics);
+    } catch (error) {
+      console.error("Update analytics error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
   
   // Admin creates an appointment proposal
   app.post("/api/appointments/propose", validateSession, validateAdmin, async (req, res) => {
