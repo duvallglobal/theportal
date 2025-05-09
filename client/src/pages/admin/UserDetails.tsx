@@ -27,7 +27,7 @@ export default function UserDetails() {
     isLoading: userLoading,
     error: userError,
   } = useQuery<User>({
-    queryKey: [`/api/users/${userId}`],
+    queryKey: [`/api/admin/users/${userId}`],
     enabled: !!userId,
   });
 
@@ -52,11 +52,11 @@ export default function UserDetails() {
   // Mutations
   const updateUserMutation = useMutation({
     mutationFn: async (userData: Partial<User>) => {
-      const res = await apiRequest("PATCH", `/api/users/${userId}`, userData);
+      const res = await apiRequest("PATCH", `/api/admin/users/${userId}`, userData);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/users/${userId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/users/${userId}`] });
       toast({
         title: "User updated",
         description: "User details have been updated successfully.",

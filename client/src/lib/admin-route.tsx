@@ -1,7 +1,8 @@
+import { useEffect, useState } from "react";
+import { Route, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2 } from "lucide-react";
-import { Redirect, Route } from "wouter";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { Loader2 } from "lucide-react";
 
 export function AdminRoute({
   path,
@@ -11,11 +12,23 @@ export function AdminRoute({
   component: () => React.JSX.Element;
 }) {
   const { user, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        navigate("/sign-in");
+      } else if (user.role !== "admin") {
+        setShowAccessDenied(true);
+      }
+    }
+  }, [user, isLoading, navigate]);
 
   if (isLoading) {
     return (
       <Route path={path}>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex h-screen w-full items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-border" />
         </div>
       </Route>
@@ -25,7 +38,9 @@ export function AdminRoute({
   if (!user) {
     return (
       <Route path={path}>
-        <Redirect to="/auth" />
+        <div className="flex h-screen w-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
+        </div>
       </Route>
     );
   }
@@ -33,10 +48,14 @@ export function AdminRoute({
   if (user.role !== "admin") {
     return (
       <Route path={path}>
-        <AccessDenied />
+        {showAccessDenied && <AccessDenied />}
       </Route>
     );
   }
 
-  return <Route path={path} component={Component} />;
+  return (
+    <Route path={path}>
+      <Component />
+    </Route>
+  );
 }

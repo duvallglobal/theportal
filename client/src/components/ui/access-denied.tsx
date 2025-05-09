@@ -1,18 +1,19 @@
-import { Button } from "@/components/ui/button";
-import { ShieldAlert, Home } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
+import { Button } from "./button";
 import { Link } from "wouter";
 
 export function AccessDenied() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
-      <ShieldAlert className="w-20 h-20 text-red-600 mb-6" />
+    <div className="h-screen flex flex-col items-center justify-center text-center px-4">
+      <div className="bg-muted/20 p-6 rounded-full mb-6">
+        <ShieldAlert className="h-12 w-12 text-destructive" />
+      </div>
       <h1 className="text-3xl font-bold mb-2">Access Denied</h1>
-      <p className="text-muted-foreground max-w-md mb-8">
-        You don&apos;t have permission to access this page. This area is restricted to admin users only.
+      <p className="text-muted-foreground max-w-md mb-6">
+        You don't have permission to access this page. This area is restricted to administrators only.
       </p>
-      <Link href="/">
-        <Button className="flex items-center gap-2">
-          <Home className="w-4 h-4" />
+      <Link href="/dashboard">
+        <Button>
           Return to Dashboard
         </Button>
       </Link>

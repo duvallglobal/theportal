@@ -988,6 +988,129 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin API routes
+  app.get("/api/admin/users", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  app.get("/api/admin/users/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  app.patch("/api/admin/users/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const updatedUser = await storage.updateUser(userId, req.body);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  app.get("/api/admin/verifications/pending", validateSession, validateAdmin, async (req, res) => {
+    try {
+      // Get all verification documents with status "pending"
+      const allDocuments = await Promise.all(
+        (await storage.getAllUsers())
+          .filter(user => user.verificationStatus === "pending")
+          .map(async user => {
+            const docs = await storage.getVerificationDocumentsByUserId(user.id);
+            return docs.map(doc => ({
+              ...doc,
+              userFullName: user.fullName,
+            }));
+          })
+      );
+      
+      // Flatten the array of arrays
+      const pendingDocuments = allDocuments.flat();
+      
+      res.json(pendingDocuments);
+    } catch (error) {
+      console.error("Error fetching pending verifications:", error);
+      res.status(500).json({ message: "Failed to fetch pending verifications" });
+    }
+  });
+  
+  app.get("/api/admin/content/pending", validateSession, validateAdmin, async (req, res) => {
+    try {
+      // Get all media files with status "pending"
+      const allFiles = await Promise.all(
+        (await storage.getAllUsers())
+          .filter(user => user.role === "client")
+          .map(async user => {
+            const files = await storage.getMediaFilesByUserId(user.id);
+            return files
+              .filter(file => file.status === "pending")
+              .map(file => ({
+                ...file,
+                userFullName: user.fullName,
+              }));
+          })
+      );
+      
+      // Flatten the array of arrays
+      const pendingFiles = allFiles.flat();
+      
+      res.json(pendingFiles);
+    } catch (error) {
+      console.error("Error fetching pending content:", error);
+      res.status(500).json({ message: "Failed to fetch pending content" });
+    }
+  });
+  
+  app.get("/api/profiles/user/:userId", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const profile = await storage.getProfileByUserId(userId);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+  
+  app.get("/api/platform-accounts/user/:userId", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const accounts = await storage.getPlatformAccountsByUserId(userId);
+      res.json(accounts);
+    } catch (error) {
+      console.error("Error fetching platform accounts:", error);
+      res.status(500).json({ message: "Failed to fetch platform accounts" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

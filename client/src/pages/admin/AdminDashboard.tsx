@@ -15,7 +15,7 @@ export default function AdminDashboard() {
     isLoading: usersLoading,
     error: usersError,
   } = useQuery<UserType[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/admin/users"],
   });
 
   // Fetch pending verifications
@@ -23,7 +23,7 @@ export default function AdminDashboard() {
     data: pendingVerifications = [],
     isLoading: verificationsLoading,
   } = useQuery<any[]>({
-    queryKey: ["/api/verifications/pending"],
+    queryKey: ["/api/admin/verifications/pending"],
   });
 
   // Fetch pending content
@@ -31,7 +31,7 @@ export default function AdminDashboard() {
     data: pendingContent = [],
     isLoading: contentLoading,
   } = useQuery<any[]>({
-    queryKey: ["/api/content/pending"],
+    queryKey: ["/api/admin/content/pending"],
   });
 
   // Summary metrics
