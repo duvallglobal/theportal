@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth, AuthProvider } from "@/hooks/use-auth";
+import { useEffect } from "react";
 import SidebarLayout from "./components/layouts/SidebarLayout";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
@@ -24,6 +25,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate("/sign-in");
+    }
+  }, [user, isLoading, navigate]);
+  
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
@@ -33,8 +40,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (!user) {
-    navigate("/sign-in");
-    return null;
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
   
   return <>{children}</>;
@@ -45,7 +55,13 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   
-  if (isLoading) {
+  useEffect(() => {
+    if (!isLoading && (!user || user.role !== "admin")) {
+      navigate("/dashboard");
+    }
+  }, [user, isLoading, navigate]);
+  
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -53,9 +69,12 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!user || user.role !== "admin") {
-    navigate("/dashboard");
-    return null;
+  if (user.role !== "admin") {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
   
   return <>{children}</>;
