@@ -176,11 +176,14 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 
-  // Middleware to check authentication status
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    if (req.url.startsWith("/api/auth/") || req.url.startsWith("/api/public/")) {
+  // Middleware to check authentication status for API routes only
+  app.use("/api", (req: Request, res: Response, next: NextFunction) => {
+    // Allow all auth and public endpoints
+    if (req.url.startsWith("/auth/") || req.url.startsWith("/public/")) {
       return next();
     }
+    
+    // Require authentication for all other API routes
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }

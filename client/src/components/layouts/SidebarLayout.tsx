@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/context/AuthContext";
-import { Menu, X, Bell, Search, BarChart2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Menu, LogOut, Bell, Search, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -10,8 +19,17 @@ interface SidebarLayoutProps {
 
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [location] = useLocation();
-  const { user, isAdmin } = useAuth();
+  const [location, navigate] = useLocation();
+  const { user, logoutMutation } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate('/sign-in');
+      }
+    });
+  };
 
   // Close sidebar on route change on mobile
   useEffect(() => {
@@ -86,6 +104,30 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 />
                 <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
               </div>
+              
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
+                        {user.fullName.charAt(0).toUpperCase()}
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </header>
