@@ -30,6 +30,7 @@ import AdminMessaging from "./pages/admin/Messaging";
 import ClientsManagement from "./pages/admin/ClientsManagement";
 import TemplateManagement from "./pages/admin/TemplateManagement";
 import CommunicationHistory from "./pages/admin/CommunicationHistory";
+import SendCommunication from "./pages/admin/SendCommunication";
 import { ThemeProvider } from "next-themes";
 import { AdminRoute } from "./lib/admin-route";
 import { OnboardingProvider } from "./hooks/use-onboarding";

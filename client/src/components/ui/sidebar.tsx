@@ -16,6 +16,7 @@ import {
   LineChart,
   FileText,
   History,
+  SendHorizontal,
 } from "lucide-react";
 // We'll replace Clerk's UserButton with our own user dropdown
 import { ChevronDown } from "lucide-react";
@@ -91,6 +92,11 @@ export function Sidebar({
       name: "Communication History",
       path: "/admin/communication-history",
       icon: <History className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Send Communication",
+      path: "/admin/send-communication",
+      icon: <SendHorizontal className="w-5 h-5 mr-3" />,
     },
   ];
 

@@ -16,6 +16,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import twilio from 'twilio';
 import { supabase } from './supabase';
 import passport from 'passport';
+import { sendEmail } from './utils/email';
 
 // Initialize Stripe if API key exists
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
