@@ -12,7 +12,9 @@ import {
   conversationParticipants, 
   notifications, Notification, InsertNotification,
   rentMenSettings, RentMenSettings, InsertRentMenSettings,
-  analytics, Analytics, InsertAnalytics
+  analytics, Analytics, InsertAnalytics,
+  communicationTemplates, CommunicationTemplate, InsertCommunicationTemplate,
+  communicationHistory, CommunicationHistory, InsertCommunicationHistory
 } from "@shared/schema";
 
 // Define storage interface with all necessary methods

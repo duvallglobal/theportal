@@ -2,7 +2,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertUserSchema, insertProfileSchema, insertPlatformAccountSchema, insertContentStrategySchema, insertMediaFileSchema, insertVerificationDocumentSchema, insertAppointmentSchema, insertMessageSchema, insertRentMenSettingsSchema, insertAnalyticsSchema } from "@shared/schema";
+import { insertUserSchema, insertProfileSchema, insertPlatformAccountSchema, insertContentStrategySchema, insertMediaFileSchema, insertVerificationDocumentSchema, insertAppointmentSchema, insertMessageSchema, insertRentMenSettingsSchema, insertAnalyticsSchema, insertCommunicationTemplateSchema, insertCommunicationHistorySchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
 import bcrypt from "bcryptjs";
@@ -1736,6 +1736,192 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching platform accounts:", error);
       res.status(500).json({ message: "Failed to fetch platform accounts" });
+    }
+  });
+
+  // Communication Templates routes
+  app.get("/api/communication-templates", validateSession, async (req, res) => {
+    try {
+      const templates = await storage.getAllCommunicationTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching communication templates:", error);
+      res.status(500).json({ message: "Failed to fetch communication templates" });
+    }
+  });
+
+  app.get("/api/communication-templates/:id", validateSession, async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      const template = await storage.getCommunicationTemplate(templateId);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching communication template:", error);
+      res.status(500).json({ message: "Failed to fetch communication template" });
+    }
+  });
+
+  app.get("/api/communication-templates/type/:type", validateSession, async (req, res) => {
+    try {
+      const type = req.params.type;
+      const templates = await storage.getCommunicationTemplatesByType(type);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching communication templates by type:", error);
+      res.status(500).json({ message: "Failed to fetch communication templates" });
+    }
+  });
+
+  app.get("/api/communication-templates/category/:category", validateSession, async (req, res) => {
+    try {
+      const category = req.params.category;
+      const templates = await storage.getCommunicationTemplatesByCategory(category);
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching communication templates by category:", error);
+      res.status(500).json({ message: "Failed to fetch communication templates" });
+    }
+  });
+
+  app.get("/api/communication-templates/default/:type/:category", validateSession, async (req, res) => {
+    try {
+      const { type, category } = req.params;
+      const template = await storage.getDefaultCommunicationTemplate(type, category);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Default template not found" });
+      }
+      
+      res.json(template);
+    } catch (error) {
+      console.error("Error fetching default communication template:", error);
+      res.status(500).json({ message: "Failed to fetch default communication template" });
+    }
+  });
+
+  app.post("/api/communication-templates", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const validatedData = insertCommunicationTemplateSchema.parse(req.body);
+      
+      // Ensure the createdBy is set to the current user's ID
+      const template = await storage.createCommunicationTemplate({
+        ...validatedData,
+        createdBy: req.user.id
+      });
+      
+      res.status(201).json(template);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating communication template:", error);
+      res.status(500).json({ message: "Failed to create communication template" });
+    }
+  });
+
+  app.put("/api/communication-templates/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      const template = await storage.getCommunicationTemplate(templateId);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      const updatedTemplate = await storage.updateCommunicationTemplate(templateId, req.body);
+      res.json(updatedTemplate);
+    } catch (error) {
+      console.error("Error updating communication template:", error);
+      res.status(500).json({ message: "Failed to update communication template" });
+    }
+  });
+
+  app.delete("/api/communication-templates/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const templateId = parseInt(req.params.id);
+      const template = await storage.getCommunicationTemplate(templateId);
+      
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      await storage.deleteCommunicationTemplate(templateId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting communication template:", error);
+      res.status(500).json({ message: "Failed to delete communication template" });
+    }
+  });
+
+  // Communication History routes
+  app.get("/api/communication-history", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const recipientId = req.query.recipientId ? parseInt(req.query.recipientId as string) : undefined;
+      const senderId = req.query.senderId ? parseInt(req.query.senderId as string) : undefined;
+      const type = req.query.type as string | undefined;
+      
+      let history: any[] = [];
+      
+      if (recipientId) {
+        history = await storage.getCommunicationHistoryByRecipientId(recipientId);
+      } else if (senderId) {
+        history = await storage.getCommunicationHistoryBySenderId(senderId);
+      } else if (type) {
+        history = await storage.getCommunicationHistoryByType(type);
+      } else {
+        return res.status(400).json({ message: "Missing query parameter. Please provide recipientId, senderId, or type." });
+      }
+      
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching communication history:", error);
+      res.status(500).json({ message: "Failed to fetch communication history" });
+    }
+  });
+
+  app.get("/api/communication-history/:id", validateSession, async (req, res) => {
+    try {
+      const historyId = parseInt(req.params.id);
+      const history = await storage.getCommunicationHistory(historyId);
+      
+      if (!history) {
+        return res.status(404).json({ message: "Communication history not found" });
+      }
+      
+      // Check if user has permission to view this history record
+      if (req.user.role !== "admin" && req.user.id !== history.recipientId && req.user.id !== history.senderId) {
+        return res.status(403).json({ message: "You don't have permission to view this communication history" });
+      }
+      
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching communication history:", error);
+      res.status(500).json({ message: "Failed to fetch communication history" });
+    }
+  });
+
+  app.post("/api/communication-history", validateSession, async (req, res) => {
+    try {
+      const validatedData = insertCommunicationHistorySchema.parse(req.body);
+      
+      // Ensure the senderId is set to the current user's ID
+      const historyEntry = await storage.createCommunicationHistory({
+        ...validatedData,
+        senderId: req.user.id
+      });
+      
+      res.status(201).json(historyEntry);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      console.error("Error creating communication history:", error);
+      res.status(500).json({ message: "Failed to create communication history" });
     }
   });
 
