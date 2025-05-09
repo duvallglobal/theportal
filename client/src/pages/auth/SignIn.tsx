@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 // Define the login schema
 const loginSchema = z.object({
-  email: z.string().email({ message: "Please enter a valid email address" }),
+  email: z.string().min(1, { message: "Please enter your email or username" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
@@ -64,9 +64,9 @@ export default function SignIn() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Email or Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="email@example.com" {...field} />
+                      <Input placeholder="Enter email or username" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
