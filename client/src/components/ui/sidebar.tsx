@@ -46,7 +46,7 @@ export function Sidebar({
     },
     {
       name: "User Management",
-      path: "/admin",
+      path: "/admin/users",
       icon: <Users className="w-5 h-5 mr-3" />,
     },
     {
@@ -55,23 +55,23 @@ export function Sidebar({
       icon: <Calendar className="w-5 h-5 mr-3" />,
     },
     {
-      name: "Content Approval",
-      path: "/admin/content",
+      name: "Content Viewer",
+      path: "/admin/content-viewer",
       icon: <Upload className="w-5 h-5 mr-3" />,
     },
     {
       name: "Verification Queue",
-      path: "/admin/verifications",
+      path: "/admin/verification-queue",
       icon: <User className="w-5 h-5 mr-3" />,
     },
     {
       name: "Billing Management",
-      path: "/admin/billing",
+      path: "/admin/billing-management",
       icon: <CreditCard className="w-5 h-5 mr-3" />,
     },
     {
       name: "Messaging",
-      path: "/messages",
+      path: "/admin/messaging",
       icon: <MessageSquare className="w-5 h-5 mr-3" />,
       badge: 3,
     },

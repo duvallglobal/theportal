@@ -227,7 +227,7 @@ export function ChatInterface({ conversationId, recipientName, recipientAvatar }
                       {isFirstInGroup && isCurrentUser && (
                         <Avatar className="w-6 h-6 sm:w-8 sm:h-8">
                           <AvatarImage 
-                            src={user?.avatarUrl || ''} 
+                            src="" 
                             alt={user?.fullName || ''} 
                           />
                           <AvatarFallback>
