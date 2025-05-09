@@ -142,6 +142,12 @@ function Router() {
           <UserDetails />
         </SidebarLayout>
       )} />
+      
+      <AdminRoute path="/admin/appointments" component={() => (
+        <SidebarLayout>
+          <AppointmentManager />
+        </SidebarLayout>
+      )} />
 
       {/* Redirect from root to dashboard */}
       <Route path="/">
