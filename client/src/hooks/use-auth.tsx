@@ -15,6 +15,9 @@ type AuthContextType = {
   loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
+  // Helper methods for direct use in components
+  login: (email: string, password: string) => Promise<SelectUser>;
+  register: (fullName: string, email: string, password: string) => Promise<SelectUser>;
 };
 
 type LoginData = Pick<InsertUser, "email" | "password">;
@@ -101,6 +104,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // Helper methods that wrap the mutations
+  const login = async (email: string, password: string): Promise<SelectUser> => {
+    return loginMutation.mutateAsync({ email, password });
+  };
+
+  const register = async (fullName: string, email: string, password: string): Promise<SelectUser> => {
+    // Create user object with required fields
+    const userData: InsertUser = {
+      email,
+      password,
+      fullName,
+      username: email.split('@')[0], // Default username from email
+      role: 'client', // Default role
+    };
+    return registerMutation.mutateAsync(userData);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -110,6 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loginMutation,
         logoutMutation,
         registerMutation,
+        login,
+        register
       }}
     >
       {children}

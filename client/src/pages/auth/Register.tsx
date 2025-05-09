@@ -25,7 +25,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
-import { useAuth } from "@/lib/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 const registerSchema = z
   .object({
