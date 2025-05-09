@@ -11,6 +11,7 @@ import path from "path";
 import fs from "fs";
 import { Resend } from "resend";
 import { handleUpdateOnboardingStep } from "./routes/onboarding";
+import adminRoutes from './routes/admin';
 import { WebSocketServer, WebSocket } from 'ws';
 import twilio from 'twilio';
 import { supabase } from './supabase';
