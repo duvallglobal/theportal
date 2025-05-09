@@ -247,6 +247,12 @@ function Router() {
           <CommunicationHistory />
         </SidebarLayout>
       )} />
+      
+      <AdminRoute path="/admin/send-communication" component={() => (
+        <SidebarLayout>
+          <SendCommunication />
+        </SidebarLayout>
+      )} />
 
       {/* Redirect from root to auth or dashboard */}
       <Route path="/">
