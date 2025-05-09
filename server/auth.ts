@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
 import createMemoryStore from "memorystore";
+import bcrypt from "bcryptjs";
 
 declare global {
   namespace Express {
@@ -46,7 +47,6 @@ async function hashPassword(password: string) {
 async function comparePasswords(supplied: string, stored: string) {
   // Handle bcrypt-style passwords (used in test data)
   if (stored.startsWith('$2a$') || stored.startsWith('$2b$')) {
-    const bcrypt = require('bcryptjs');
     return bcrypt.compareSync(supplied, stored);
   }
   
