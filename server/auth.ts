@@ -76,10 +76,14 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      httpOnly: true,
+      sameSite: 'lax'
     },
     store: new PgSessionStore({
       pool,
-      createTableIfMissing: true
+      createTableIfMissing: true,
+      tableName: 'session',
+      disableTouch: false
     })
   };
 
@@ -94,7 +98,7 @@ export function setupAuth(app: Express) {
         usernameField: "email",
         passwordField: "password",
       },
-      async (emailOrUsername, password, done) => {
+      async (emailOrUsername: string, password: string, done: Function) => {
         try {
           // Try to find user by email or username
           let user = await storage.getUserByEmail(emailOrUsername);
@@ -115,32 +119,57 @@ export function setupAuth(app: Express) {
 
           return done(null, user);
         } catch (error) {
-          return done(error);
+          console.error("Error during authentication:", error);
+          return done(error, false);
         }
       }
     )
   );
 
   // Serialize/deserialize user
-  passport.serializeUser((user, done) => {
+  passport.serializeUser((user: Express.User, done: Function) => {
     done(null, user.id);
   });
 
-  passport.deserializeUser(async (id: number, done) => {
+  passport.deserializeUser(async (id: number, done: Function) => {
     try {
       const user = await storage.getUser(id);
-      done(null, user);
+      if (!user) {
+        console.warn(`User with ID ${id} not found during deserialization`);
+        return done(null, null);
+      }
+      return done(null, user);
     } catch (error) {
-      done(error);
+      console.error("Error deserializing user:", error);
+      return done(error, null);
     }
   });
 
   // Auth routes
   app.post(
     "/api/auth/login",
-    passport.authenticate("local"),
-    (req: Request, res: Response) => {
-      res.json(req.user);
+    (req: Request, res: Response, next: NextFunction) => {
+      passport.authenticate("local", (err: any, user: Express.User | false | null, info: any) => {
+        if (err) {
+          console.error("Login error:", err);
+          return res.status(500).json({ message: "Internal server error" });
+        }
+        
+        if (!user) {
+          return res.status(400).json({ message: info?.message || "Invalid credentials" });
+        }
+        
+        req.login(user, (err) => {
+          if (err) {
+            console.error("Login session error:", err);
+            return res.status(500).json({ message: "Failed to create session" });
+          }
+          
+          // Return a sanitized user object (without password)
+          const { password, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
+        });
+      })(req, res, next);
     }
   );
 
@@ -167,14 +196,24 @@ export function setupAuth(app: Express) {
         password: hashedPassword,
         fullName,
         role: "client", // Default role
+        phone: null,
+        onboardingStatus: "in_progress",
+        onboardingStep: 1,
+        plan: null,
+        verificationStatus: "pending",
+        stripeCustomerId: null,
+        stripeSubscriptionId: null
       });
 
       // Log in the user
-      req.login(user, (err) => {
+      req.login(user, (err: any) => {
         if (err) {
+          console.error("Error during login after registration:", err);
           return res.status(500).json({ message: "Error during login after registration" });
         }
-        return res.status(201).json(user);
+        // Return a sanitized user object (without password)
+        const { password, ...userWithoutPassword } = user;
+        return res.status(201).json(userWithoutPassword);
       });
     } catch (error) {
       console.error("Registration error:", error);
