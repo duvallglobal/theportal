@@ -14,6 +14,7 @@ import { handleUpdateOnboardingStep } from "./routes/onboarding";
 import { WebSocketServer, WebSocket } from 'ws';
 import twilio from 'twilio';
 import { supabase } from './supabase';
+import passport from 'passport';
 
 // Initialize Stripe if API key exists
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -80,24 +81,13 @@ const storage_multer = multer.diskStorage({
 const upload = multer({ storage: storage_multer });
 
 // Session validation middleware
-const validateSession = async (req: any, res: any, next: any) => {
-  const userId = req.session?.userId;
-
-  if (!userId) {
+const validateSession = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated()) {
     return res.status(401).json({ message: "Unauthorized" });
   }
-
-  try {
-    const user = await storage.getUser(Number(userId));
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error("Session validation error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
+  
+  // User data is already attached to req.user by Passport
+  next();
 };
 
 // Admin validation middleware
@@ -174,31 +164,51 @@ interface WSMessage {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication with Passport
-  setupAuth(app);
+  const authMiddleware = setupAuth(app);
   // Auth routes
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", async (req, res, next) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUserByEmail = await storage.getUserByEmail(validatedData.email);
+      if (existingUserByEmail) {
+        return res.status(400).json({ message: "Email is already in use" });
+      }
+      
+      const existingUserByUsername = await storage.getUserByUsername(validatedData.username);
+      if (existingUserByUsername) {
+        return res.status(400).json({ message: "Username is already taken" });
+      }
       
       // Hash password
       const salt = await bcrypt.genSalt(10);
       const hashedPassword = await bcrypt.hash(validatedData.password, salt);
       
-      // Create user
+      // Create user with default onboarding settings
       const user = await storage.createUser({
         ...validatedData,
         password: hashedPassword,
+        onboardingStep: 1, // Always start at step 1
+        onboardingStatus: "in_progress"
       });
       
-      // Set session
-      req.session.userId = user.id;
-      
-      res.status(201).json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role
+      // Log the user in
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login after registration error:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        res.status(201).json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          onboardingStatus: user.onboardingStatus,
+          onboardingStep: user.onboardingStep
+        });
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -209,41 +219,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
-    try {
-      const { email, password } = req.body;
+  app.post("/api/auth/login", (req, res, next) => {
+    passport.authenticate("local", (err, user, info) => {
+      if (err) {
+        console.error("Login error:", err);
+        return res.status(500).json({ message: "Internal server error" });
+      }
       
-      const user = await storage.getUserByEmail(email);
       if (!user) {
-        return res.status(400).json({ message: "Invalid credentials" });
+        return res.status(400).json({ message: info?.message || "Invalid credentials" });
       }
       
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: "Invalid credentials" });
-      }
-      
-      req.session.userId = user.id;
-      
-      res.json({
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        role: user.role
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login session error:", err);
+          return res.status(500).json({ message: "Failed to create session" });
+        }
+        
+        res.json({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          onboardingStatus: user.onboardingStatus,
+          onboardingStep: user.onboardingStep || 1, // Default to step 1 for new users
+          plan: user.plan
+        });
       });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
+    })(req, res, next);
   });
 
   app.post("/api/auth/logout", (req, res) => {
-    req.session.destroy((err) => {
+    req.logout((err) => {
       if (err) {
         return res.status(500).json({ message: "Error logging out" });
       }
-      res.json({ success: true });
+      res.json({ success: true, message: "Logged out successfully" });
     });
   });
 
