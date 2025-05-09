@@ -10,6 +10,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { Resend } from "resend";
+import { handleUpdateOnboardingStep } from "./routes/onboarding";
 
 // Initialize Stripe if API key exists
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -287,6 +288,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Onboarding routes
+  app.post("/api/onboarding/tooltip/:step", validateSession, handleUpdateOnboardingStep);
+  
   app.post("/api/onboarding/step/:stepNumber", validateSession, async (req, res) => {
     try {
       const { stepNumber } = req.params;
