@@ -1924,6 +1924,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create communication history" });
     }
   });
+  
+  // Endpoint to send communications using templates
+  app.post("/api/send-communication", validateSession, validateAdmin, async (req, res) => {
+    try {
+      // Validate request body
+      const { templateId, recipientId, customParams = {} } = req.body;
+      
+      if (!templateId || !recipientId) {
+        return res.status(400).json({ message: "Template ID and recipient ID are required" });
+      }
+      
+      // Get the template
+      const template = await storage.getCommunicationTemplate(parseInt(templateId));
+      if (!template) {
+        return res.status(404).json({ message: "Template not found" });
+      }
+      
+      // Get the recipient
+      const recipient = await storage.getUser(parseInt(recipientId));
+      if (!recipient) {
+        return res.status(404).json({ message: "Recipient not found" });
+      }
+      
+      // Process template content with custom parameters
+      let content = template.content;
+      let subject = template.subject;
+      
+      // Replace placeholder variables with values from customParams
+      Object.entries(customParams).forEach(([key, value]) => {
+        const placeholder = new RegExp(`{{${key}}}`, 'g');
+        content = content.replace(placeholder, value as string);
+        if (subject) {
+          subject = subject.replace(placeholder, value as string);
+        }
+      });
+      
+      // Default placeholders
+      content = content
+        .replace(/{{recipientName}}/g, recipient.fullName)
+        .replace(/{{recipientEmail}}/g, recipient.email)
+        .replace(/{{date}}/g, new Date().toLocaleDateString())
+        .replace(/{{time}}/g, new Date().toLocaleTimeString());
+      
+      if (subject) {
+        subject = subject
+          .replace(/{{recipientName}}/g, recipient.fullName)
+          .replace(/{{recipientEmail}}/g, recipient.email)
+          .replace(/{{date}}/g, new Date().toLocaleDateString())
+          .replace(/{{time}}/g, new Date().toLocaleTimeString());
+      }
+      
+      // Send the communication based on template type
+      let status = "failed";
+      let statusMessage = null;
+      
+      try {
+        switch(template.type) {
+          case "email":
+            if (!subject) {
+              subject = `ManageTheFans: ${template.name}`;
+            }
+            
+            const emailSent = await sendEmail(recipient.email, subject, content, content);
+            status = emailSent ? "sent" : "failed";
+            break;
+            
+          case "sms":
+            if (recipient.phone) {
+              const smsSent = await sendSmsNotification(recipient.phone, content);
+              status = smsSent ? "sent" : "failed";
+            } else {
+              status = "failed";
+              statusMessage = "Recipient has no phone number";
+            }
+            break;
+            
+          case "notification":
+            // Create in-app notification for the recipient
+            await storage.createNotification({
+              userId: recipient.id,
+              type: template.category,
+              content: content,
+              deliveryMethod: "in-app"
+            });
+            status = "sent";
+            break;
+            
+          default:
+            status = "failed";
+            statusMessage = "Invalid template type";
+        }
+      } catch (error) {
+        console.error(`Error sending ${template.type} communication:`, error);
+        status = "failed";
+        statusMessage = `Error: ${error instanceof Error ? error.message : String(error)}`;
+      }
+      
+      // Create communication history record
+      const historyEntry = await storage.createCommunicationHistory({
+        templateId: template.id,
+        recipientId: recipient.id,
+        senderId: req.user.id,
+        type: template.type,
+        subject: subject || null,
+        content: content,
+        status: status,
+        statusMessage: statusMessage
+      });
+      
+      // Return result to client
+      return res.status(201).json({
+        success: status === "sent",
+        historyEntry,
+        message: status === "sent" 
+          ? `${template.type} sent successfully` 
+          : `Failed to send ${template.type}${statusMessage ? ': ' + statusMessage : ''}`
+      });
+      
+    } catch (error) {
+      console.error("Error sending communication:", error);
+      return res.status(500).json({ 
+        message: "Failed to send communication", 
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
