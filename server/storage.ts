@@ -101,6 +101,23 @@ export interface IStorage {
   getLatestAnalyticsByUserId(userId: number): Promise<Analytics | undefined>;
   createAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
   updateAnalytics(id: number, analyticsData: Partial<Analytics>): Promise<Analytics>;
+  
+  // Communication Template methods
+  getCommunicationTemplate(id: number): Promise<CommunicationTemplate | undefined>;
+  getCommunicationTemplatesByType(type: string): Promise<CommunicationTemplate[]>;
+  getCommunicationTemplatesByCategory(category: string): Promise<CommunicationTemplate[]>;
+  getDefaultCommunicationTemplate(type: string, category: string): Promise<CommunicationTemplate | undefined>;
+  createCommunicationTemplate(template: InsertCommunicationTemplate): Promise<CommunicationTemplate>;
+  updateCommunicationTemplate(id: number, templateData: Partial<CommunicationTemplate>): Promise<CommunicationTemplate>;
+  deleteCommunicationTemplate(id: number): Promise<void>;
+  getAllCommunicationTemplates(): Promise<CommunicationTemplate[]>;
+  
+  // Communication History methods
+  getCommunicationHistory(id: number): Promise<CommunicationHistory | undefined>;
+  getCommunicationHistoryByRecipientId(recipientId: number): Promise<CommunicationHistory[]>;
+  getCommunicationHistoryBySenderId(senderId: number): Promise<CommunicationHistory[]>;
+  getCommunicationHistoryByType(type: string): Promise<CommunicationHistory[]>;
+  createCommunicationHistory(history: InsertCommunicationHistory): Promise<CommunicationHistory>;
 }
 
 // In-memory storage implementation
@@ -120,6 +137,8 @@ export class MemStorage implements IStorage {
   private rentMenSettingsMap: Map<number, RentMenSettings>;
   
   private analyticsMap: Map<number, Analytics>;
+  private communicationTemplatesMap: Map<number, CommunicationTemplate>;
+  private communicationHistoryMap: Map<number, CommunicationHistory>;
   
   private currentIds: {
     users: number;
@@ -136,6 +155,8 @@ export class MemStorage implements IStorage {
     notifications: number;
     rentMenSettings: number;
     analytics: number;
+    communicationTemplates: number;
+    communicationHistory: number;
   };
 
   constructor() {
@@ -153,6 +174,8 @@ export class MemStorage implements IStorage {
     this.notificationsMap = new Map();
     this.rentMenSettingsMap = new Map();
     this.analyticsMap = new Map();
+    this.communicationTemplatesMap = new Map();
+    this.communicationHistoryMap = new Map();
     
     this.currentIds = {
       users: 1,
@@ -169,6 +192,8 @@ export class MemStorage implements IStorage {
       notifications: 1,
       rentMenSettings: 1,
       analytics: 1,
+      communicationTemplates: 1,
+      communicationHistory: 1,
     };
 
     // Initialize with test users
@@ -852,6 +877,106 @@ export class MemStorage implements IStorage {
     
     this.analyticsMap.set(id, updatedAnalytics);
     return updatedAnalytics;
+  }
+  
+  // Communication Template methods
+  async getCommunicationTemplate(id: number): Promise<CommunicationTemplate | undefined> {
+    return this.communicationTemplatesMap.get(id);
+  }
+  
+  async getCommunicationTemplatesByType(type: string): Promise<CommunicationTemplate[]> {
+    return Array.from(this.communicationTemplatesMap.values()).filter(
+      (template) => template.type === type
+    );
+  }
+  
+  async getCommunicationTemplatesByCategory(category: string): Promise<CommunicationTemplate[]> {
+    return Array.from(this.communicationTemplatesMap.values()).filter(
+      (template) => template.category === category
+    );
+  }
+  
+  async getDefaultCommunicationTemplate(type: string, category: string): Promise<CommunicationTemplate | undefined> {
+    return Array.from(this.communicationTemplatesMap.values()).find(
+      (template) => template.type === type && template.category === category && template.isDefault
+    );
+  }
+  
+  async createCommunicationTemplate(template: InsertCommunicationTemplate): Promise<CommunicationTemplate> {
+    const id = this.currentIds.communicationTemplates++;
+    const now = new Date();
+    const newTemplate: CommunicationTemplate = {
+      ...template,
+      id,
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.communicationTemplatesMap.set(id, newTemplate);
+    return newTemplate;
+  }
+  
+  async updateCommunicationTemplate(id: number, templateData: Partial<CommunicationTemplate>): Promise<CommunicationTemplate> {
+    const template = await this.getCommunicationTemplate(id);
+    if (!template) {
+      throw new Error(`Communication template with ID ${id} not found`);
+    }
+    
+    const updatedTemplate: CommunicationTemplate = {
+      ...template,
+      ...templateData,
+      id,
+      updatedAt: new Date(),
+    };
+    
+    this.communicationTemplatesMap.set(id, updatedTemplate);
+    return updatedTemplate;
+  }
+  
+  async deleteCommunicationTemplate(id: number): Promise<void> {
+    if (!this.communicationTemplatesMap.has(id)) {
+      throw new Error(`Communication template with ID ${id} not found`);
+    }
+    
+    this.communicationTemplatesMap.delete(id);
+  }
+  
+  async getAllCommunicationTemplates(): Promise<CommunicationTemplate[]> {
+    return Array.from(this.communicationTemplatesMap.values());
+  }
+  
+  // Communication History methods
+  async getCommunicationHistory(id: number): Promise<CommunicationHistory | undefined> {
+    return this.communicationHistoryMap.get(id);
+  }
+  
+  async getCommunicationHistoryByRecipientId(recipientId: number): Promise<CommunicationHistory[]> {
+    return Array.from(this.communicationHistoryMap.values()).filter(
+      (history) => history.recipientId === recipientId
+    );
+  }
+  
+  async getCommunicationHistoryBySenderId(senderId: number): Promise<CommunicationHistory[]> {
+    return Array.from(this.communicationHistoryMap.values()).filter(
+      (history) => history.senderId === senderId
+    );
+  }
+  
+  async getCommunicationHistoryByType(type: string): Promise<CommunicationHistory[]> {
+    return Array.from(this.communicationHistoryMap.values()).filter(
+      (history) => history.type === type
+    );
+  }
+  
+  async createCommunicationHistory(history: InsertCommunicationHistory): Promise<CommunicationHistory> {
+    const id = this.currentIds.communicationHistory++;
+    const now = new Date();
+    const newHistory: CommunicationHistory = {
+      ...history,
+      id,
+      sentAt: now,
+    };
+    this.communicationHistoryMap.set(id, newHistory);
+    return newHistory;
   }
 }
 

@@ -191,6 +191,34 @@ export const analytics = pgTable("analytics", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Communication Templates Table
+export const communicationTemplates = pgTable("communication_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // Internal reference name
+  type: text("type").notNull(), // 'email', 'sms', 'notification'
+  category: text("category").notNull(), // 'appointment', 'payment', 'onboarding', etc.
+  subject: text("subject"), // For email templates
+  content: text("content").notNull(),
+  isDefault: boolean("is_default").default(false),
+  createdBy: integer("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Communication History Table
+export const communicationHistory = pgTable("communication_history", {
+  id: serial("id").primaryKey(),
+  templateId: integer("template_id").references(() => communicationTemplates.id),
+  recipientId: integer("recipient_id").notNull().references(() => users.id),
+  senderId: integer("sender_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // 'email', 'sms', 'notification'
+  subject: text("subject"), // For emails
+  content: text("content").notNull(),
+  status: text("status").notNull(), // 'sent', 'delivered', 'failed'
+  statusMessage: text("status_message"), // Error message if failed
+  sentAt: timestamp("sent_at").defaultNow().notNull(),
+});
+
 // Create Zod schemas for validation
 
 export const insertUserSchema = createInsertSchema(users).omit({
@@ -272,6 +300,17 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   readAt: true
 });
 
+export const insertCommunicationTemplateSchema = createInsertSchema(communicationTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertCommunicationHistorySchema = createInsertSchema(communicationHistory).omit({
+  id: true,
+  sentAt: true
+});
+
 // Type exports
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -318,3 +357,9 @@ export const insertAnalyticsSchema = createInsertSchema(analytics).omit({
 
 export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
 export type Analytics = typeof analytics.$inferSelect;
+
+export type InsertCommunicationTemplate = z.infer<typeof insertCommunicationTemplateSchema>;
+export type CommunicationTemplate = typeof communicationTemplates.$inferSelect;
+
+export type InsertCommunicationHistory = z.infer<typeof insertCommunicationHistorySchema>;
+export type CommunicationHistory = typeof communicationHistory.$inferSelect;
