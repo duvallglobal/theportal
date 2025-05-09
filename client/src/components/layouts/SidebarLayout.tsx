@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Sidebar } from "@/components/ui/sidebar";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { Menu, LogOut, Bell, Search, User } from "lucide-react";
+import { Menu, LogOut, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NotificationsPopover } from "@/components/notifications/NotificationsPopover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +18,7 @@ interface SidebarLayoutProps {
   children: React.ReactNode;
 }
 
-export default function SidebarLayout({ children }: SidebarLayoutProps) {
+export function SidebarLayout({ children }: SidebarLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [location, navigate] = useLocation();
   const { user, logoutMutation } = useAuth();
@@ -92,10 +93,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             </button>
             <h1 className="text-xl font-semibold text-white lg:hidden">ManageTheFans</h1>
             <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-background-lighter relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-0 right-0 w-2 h-2 bg-primary-light rounded-full"></span>
-              </button>
+              <NotificationsPopover />
               <div className="relative lg:block hidden">
                 <input
                   type="text"
@@ -138,3 +136,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     </div>
   );
 }
+
+// Adding default export for compatibility
+export default SidebarLayout;

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { SidebarLayout } from '@/components/layouts/SidebarLayout';
 import { ConversationsList } from '@/components/messaging/ConversationsList';
 import { ChatInterface } from '@/components/messaging/ChatInterface';
 import { useAuth } from '@/hooks/use-auth';
+import { useMessaging } from '@/lib/context/MessagingProvider';
 import { MessageSquare } from 'lucide-react';
 
 interface Conversation {
@@ -46,9 +47,8 @@ export default function Messages() {
             {selectedConversation && recipient ? (
               <ChatInterface 
                 conversationId={selectedConversation.id}
-                recipientId={recipient.id}
                 recipientName={recipient.fullName}
-                recipientAvatarUrl={recipient.avatarUrl}
+                recipientAvatar={recipient.avatarUrl}
               />
             ) : (
               <div className="flex flex-col items-center justify-center h-full bg-muted/30 rounded-lg border border-dashed">

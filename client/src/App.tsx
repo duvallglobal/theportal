@@ -5,7 +5,7 @@ import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth, AuthProvider } from "@/hooks/use-auth";
 import { useEffect } from "react";
-import SidebarLayout from "./components/layouts/SidebarLayout";
+import { SidebarLayout } from "./components/layouts/SidebarLayout";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
 import Profile from "./pages/Profile";
@@ -27,6 +27,7 @@ import { AdminRoute } from "./lib/admin-route";
 import { OnboardingProvider } from "./hooks/use-onboarding";
 import { OnboardingTooltipContainer } from "./components/ui/onboarding-tooltip";
 import { HelpButton } from "./components/ui/help-button";
+import { MessagingProvider } from "./lib/context/MessagingProvider";
 
 // Auth wrapper to protect routes
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -183,14 +184,16 @@ function App() {
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <OnboardingProvider>
-            <TooltipProvider>
-              <Router />
-              <OnboardingTooltipContainer />
-              <HelpButton />
-              <Toaster />
-            </TooltipProvider>
-          </OnboardingProvider>
+          <MessagingProvider>
+            <OnboardingProvider>
+              <TooltipProvider>
+                <Router />
+                <OnboardingTooltipContainer />
+                <HelpButton />
+                <Toaster />
+              </TooltipProvider>
+            </OnboardingProvider>
+          </MessagingProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

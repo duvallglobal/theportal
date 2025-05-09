@@ -1,219 +1,304 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useToast } from '@/hooks/use-toast';
+import { queryClient } from '@/lib/queryClient';
+import { supabase } from '@/lib/supabase';
 
 export interface Message {
-  id: string;
-  sender_id: number;
-  recipient_id: number;
-  conversation_id: number;
+  id: number;
+  conversationId: number;
+  senderId: number;
   content: string;
-  created_at: string;
-  is_read: boolean;
+  attachments?: any[];
+  isRead: boolean;
+  createdAt: string;
 }
 
-export interface RealTimeEvent {
-  type: 'message' | 'notification' | 'status' | 'typing' | 'read' | 'appointment';
-  payload: any;
+interface Conversation {
+  id: number;
+  lastMessageAt: string;
+  lastMessage: string;
+  unreadCount: number;
+  participants: {
+    id: number;
+    username: string;
+    fullName: string;
+    avatarUrl?: string;
+  }[];
 }
 
-interface UseRealTimeMessagingProps {
-  conversationId?: number;
-}
-
-export function useRealTimeMessaging({ conversationId }: UseRealTimeMessagingProps = {}) {
+export function useRealTimeMessaging() {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [events, setEvents] = useState<RealTimeEvent[]>([]);
+  const [messages, setMessages] = useState<Record<number, Message[]>>({});
+  const [isTyping, setIsTyping] = useState<Record<number, boolean>>({});
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch messages
-  const fetchMessages = useCallback(async () => {
-    if (!user || !conversationId) return;
+  // Initialize Supabase real-time connection
+  useEffect(() => {
+    if (!user) return;
 
+    // Fetch conversations
+    const fetchConversations = async () => {
+      try {
+        const response = await fetch('/api/conversations');
+        if (!response.ok) {
+          throw new Error('Failed to fetch conversations');
+        }
+        const data = await response.json();
+        setConversations(data);
+        
+        // Initialize messages state with empty arrays for each conversation
+        const initialMessages: Record<number, Message[]> = {};
+        data.forEach((conversation: Conversation) => {
+          initialMessages[conversation.id] = [];
+        });
+        setMessages(initialMessages);
+        
+        // Fetch messages for each conversation
+        data.forEach((conversation: Conversation) => {
+          fetchMessages(conversation.id);
+        });
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        setError('Failed to load conversations');
+      }
+    };
+    
+    fetchConversations();
+    
+    // Subscribe to real-time updates
+    const setupRealtime = async () => {
+      try {
+        // Subscribe to new messages channel
+        const messageSubscription = supabase
+          .channel('messages')
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages'
+          }, (payload) => {
+            const newMessage = payload.new as Message;
+            // Only process messages for conversations we're tracking
+            if (messages[newMessage.conversationId]) {
+              setMessages(prev => ({
+                ...prev,
+                [newMessage.conversationId]: [
+                  ...prev[newMessage.conversationId],
+                  newMessage
+                ]
+              }));
+              
+              // If the message is from someone else, mark typing as false
+              if (newMessage.senderId !== user.id) {
+                setIsTyping(prev => ({
+                  ...prev,
+                  [newMessage.conversationId]: false
+                }));
+              }
+              
+              // Invalidate conversations query to refresh the list
+              queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+            }
+          })
+          .subscribe();
+        
+        // Subscribe to typing indicators channel
+        const typingSubscription = supabase
+          .channel('typing')
+          .on('broadcast', { event: 'typing' }, (payload) => {
+            if (payload.conversationId && payload.senderId !== user.id) {
+              setIsTyping(prev => ({
+                ...prev,
+                [payload.conversationId]: payload.isTyping
+              }));
+              
+              // Clear typing indicator after a few seconds
+              if (payload.isTyping) {
+                setTimeout(() => {
+                  setIsTyping(prev => ({
+                    ...prev,
+                    [payload.conversationId]: false
+                  }));
+                }, 3000);
+              }
+            }
+          })
+          .subscribe();
+        
+        setIsConnected(true);
+        
+        // Cleanup function
+        return () => {
+          supabase.removeChannel(messageSubscription);
+          supabase.removeChannel(typingSubscription);
+        };
+      } catch (error) {
+        console.error('Error setting up real-time:', error);
+        setError('Failed to connect to real-time messaging');
+        setIsConnected(false);
+      }
+    };
+    
+    setupRealtime();
+  }, [user]);
+
+  // Fetch messages for a specific conversation
+  const fetchMessages = async (conversationId: number) => {
     try {
-      setIsLoading(true);
-      
-      const response = await fetch(`/api/messages/${conversationId}`);
+      const response = await fetch(`/api/conversations/${conversationId}/messages`);
       if (!response.ok) {
         throw new Error('Failed to fetch messages');
       }
-      
       const data = await response.json();
-      setMessages(data);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error fetching messages'));
-      console.error('Error fetching messages:', err);
-    } finally {
-      setIsLoading(false);
+      setMessages(prev => ({
+        ...prev,
+        [conversationId]: data
+      }));
+    } catch (error) {
+      console.error(`Error fetching messages for conversation ${conversationId}:`, error);
     }
-  }, [user, conversationId]);
+  };
 
   // Send a message
-  const sendMessage = useCallback(async (content: string, recipientId: number) => {
-    if (!user) return null;
+  const sendMessage = async (
+    conversationId: number, 
+    content: string,
+    attachments?: any
+  ): Promise<boolean> => {
+    if (!user) return false;
     
     try {
-      const messageData = {
-        content,
-        recipientId,
-        conversationId: conversationId || null
-      };
-      
-      const response = await fetch('/api/messages', {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(messageData)
+        body: JSON.stringify({
+          content,
+          attachments
+        })
       });
       
       if (!response.ok) {
         throw new Error('Failed to send message');
       }
       
-      const newMessage = await response.json();
-      
-      // Insert into Supabase for real-time delivery
-      await supabase
-        .from('messages')
-        .insert([{
-          id: newMessage.id,
-          sender_id: user.id,
-          recipient_id: recipientId,
-          conversation_id: conversationId || null,
-          content,
-          is_read: false
-        }]);
-      
-      return newMessage;
-    } catch (err) {
-      console.error('Error sending message:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to send message. Please try again.',
-        variant: 'destructive',
-      });
-      return null;
+      return true;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return false;
     }
-  }, [user, conversationId, toast]);
+  };
 
-  // Mark message as read
-  const markAsRead = useCallback(async (messageId: number) => {
-    if (!user) return;
+  // Send typing indicator
+  const sendTypingIndicator = async (
+    conversationId: number,
+    isTyping: boolean
+  ): Promise<boolean> => {
+    if (!user || !isConnected) return false;
     
     try {
+      await supabase
+        .channel('typing')
+        .send({
+          type: 'broadcast',
+          event: 'typing',
+          payload: {
+            conversationId,
+            senderId: user.id,
+            isTyping
+          }
+        });
+      
+      return true;
+    } catch (error) {
+      console.error('Error sending typing indicator:', error);
+      return false;
+    }
+  };
+
+  // Mark message as read
+  const markMessageAsRead = async (messageId: number): Promise<boolean> => {
+    try {
       const response = await fetch(`/api/messages/${messageId}/read`, {
-        method: 'PUT'
+        method: 'POST'
       });
       
       if (!response.ok) {
         throw new Error('Failed to mark message as read');
       }
       
-      // Update the local state
-      setMessages(prevMessages => 
-        prevMessages.map(msg => 
-          msg.id === messageId.toString() ? { ...msg, is_read: true } : msg
-        )
-      );
-      
-      // Update Supabase for real-time sync
-      await supabase
-        .from('messages')
-        .update({ is_read: true })
-        .eq('id', messageId);
+      // Update local state
+      setMessages(prev => {
+        const updatedMessages = { ...prev };
         
-    } catch (err) {
-      console.error('Error marking message as read:', err);
-    }
-  }, [user]);
-
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!user) return;
-    
-    // Subscribe to all messages where the user is the recipient
-    const subscription = supabase
-      .channel('public:messages')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'messages',
-          filter: `recipient_id=eq.${user.id}`
-        }, 
-        (payload) => {
-          const newMessage = payload.new as Message;
+        // Find which conversation contains this message
+        for (const conversationId in updatedMessages) {
+          const conversationMessages = updatedMessages[conversationId];
+          const messageIndex = conversationMessages.findIndex(msg => msg.id === messageId);
           
-          // Add to messages if in the current conversation
-          if (conversationId && newMessage.conversation_id === conversationId) {
-            setMessages(prevMessages => [...prevMessages, newMessage]);
+          if (messageIndex !== -1) {
+            updatedMessages[conversationId] = [
+              ...conversationMessages.slice(0, messageIndex),
+              { ...conversationMessages[messageIndex], isRead: true },
+              ...conversationMessages.slice(messageIndex + 1)
+            ];
+            break;
           }
-          
-          // Add to events for notifications
-          setEvents(prev => [...prev, { 
-            type: 'message', 
-            payload: newMessage 
-          }]);
-          
-          // Show toast notification
-          toast({
-            title: 'New Message',
-            description: 'You have received a new message',
-          });
         }
-      )
-      .subscribe();
-    
-    // Subscribe to appointment notifications
-    const appointmentSubscription = supabase
-      .channel('public:appointments')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'appointments',
-          filter: `client_id=eq.${user.id}`
-        }, 
-        (payload) => {
-          // Add to events for notifications
-          setEvents(prev => [...prev, { 
-            type: 'appointment', 
-            payload: payload.new
-          }]);
-          
-          // Show toast notification
-          toast({
-            title: 'Appointment Update',
-            description: 'Your appointment has been updated',
-          });
-        }
-      )
-      .subscribe();
-
-    // Fetch messages for the conversation
-    if (conversationId) {
-      fetchMessages();
+        
+        return updatedMessages;
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      return false;
     }
+  };
 
-    // Cleanup
-    return () => {
-      subscription.unsubscribe();
-      appointmentSubscription.unsubscribe();
-    };
-  }, [user, conversationId, fetchMessages, toast]);
+  // Create a new conversation
+  const createConversation = async (recipientId: number): Promise<number | null> => {
+    if (!user) return null;
+    
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          participantIds: [user.id, recipientId]
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create conversation');
+      }
+      
+      const data = await response.json();
+      
+      // Refresh conversations
+      queryClient.invalidateQueries({ queryKey: ['/api/conversations'] });
+      
+      return data.id;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      return null;
+    }
+  };
 
   return {
     messages,
-    isLoading,
+    isTyping,
+    conversations,
+    isConnected,
     error,
-    events,
     sendMessage,
-    markAsRead,
-    refreshMessages: fetchMessages,
+    sendTypingIndicator,
+    markMessageAsRead,
+    createConversation,
+    fetchMessages
   };
 }

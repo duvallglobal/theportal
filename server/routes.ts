@@ -95,6 +95,22 @@ const validateAdmin = async (req: any, res: any, next: any) => {
   next();
 };
 
+// Utility to format phone number for Twilio
+function formatPhoneNumber(phoneNumber: string): string {
+  // Remove all non-numeric characters
+  const digitsOnly = phoneNumber.replace(/\D/g, '');
+  
+  // Ensure it has country code, add +1 (US) if needed
+  if (digitsOnly.length === 10) {
+    return `+1${digitsOnly}`;
+  } else if (digitsOnly.length > 10 && !phoneNumber.startsWith('+')) {
+    return `+${digitsOnly}`;
+  }
+  
+  // If already has +, just return the cleaned version
+  return phoneNumber.startsWith('+') ? phoneNumber : `+${digitsOnly}`;
+}
+
 // Function to send SMS notifications
 async function sendSmsNotification(to: string, message: string): Promise<boolean> {
   if (!twilioClient || !twilioPhoneNumber) {
@@ -103,10 +119,13 @@ async function sendSmsNotification(to: string, message: string): Promise<boolean
   }
 
   try {
+    // Format the phone number for Twilio
+    const formattedNumber = formatPhoneNumber(to);
+    
     const result = await twilioClient.messages.create({
       body: message,
       from: twilioPhoneNumber,
-      to: to
+      to: formattedNumber
     });
     
     console.log(`SMS sent successfully: ${result.sid}`);

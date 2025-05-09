@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
-import { useQuery } from '@tanstack/react-query';
+import { useMessaging } from '@/lib/context/MessagingProvider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import {
   CardTitle,
   CardDescription
 } from '@/components/ui/card';
-import { Loader2, MessageSquare, Search } from 'lucide-react';
+import { Loader2, MessageSquare, Search, UserPlus } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface Conversation {
@@ -37,18 +37,10 @@ export function ConversationsList({
   selectedConversationId
 }: ConversationsListProps) {
   const { user } = useAuth();
+  const { conversations, isConnected, error } = useMessaging();
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Fetch conversations
-  const {
-    data: conversations,
-    isLoading,
-    error,
-    refetch
-  } = useQuery({
-    queryKey: ['/api/conversations'],
-    enabled: !!user
-  });
+  const [isNewConversationModalOpen, setIsNewConversationModalOpen] = useState(false);
+  const isLoading = !conversations && !error;
 
   // Filter conversations based on search query
   const filteredConversations = conversations
@@ -80,9 +72,13 @@ export function ConversationsList({
     return (
       <div className="flex flex-col items-center justify-center p-6 text-center">
         <p className="text-destructive mb-2">Failed to load conversations</p>
-        <Button onClick={() => refetch()} size="sm">
-          Retry
-        </Button>
+        <p className="text-sm text-muted-foreground mb-3">{error}</p>
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+          <span className="text-xs text-muted-foreground">
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </span>
+        </div>
       </div>
     );
   }
@@ -92,8 +88,13 @@ export function ConversationsList({
       <CardHeader className="border-b pb-3">
         <CardTitle className="flex items-center justify-between">
           <span>Messages</span>
-          <Button variant="ghost" size="icon">
-            <MessageSquare className="h-5 w-5" />
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsNewConversationModalOpen(true)}
+            title="New conversation"
+          >
+            <UserPlus className="h-5 w-5" />
           </Button>
         </CardTitle>
         <CardDescription>
@@ -105,6 +106,13 @@ export function ConversationsList({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          
+          <div className="flex items-center gap-2 mt-2">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+            <span className="text-xs text-muted-foreground">
+              {isConnected ? 'Real-time active' : 'Offline mode'}
+            </span>
           </div>
         </CardDescription>
       </CardHeader>

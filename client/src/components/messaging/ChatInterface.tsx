@@ -1,159 +1,327 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { useRealTimeMessaging, Message } from '@/hooks/use-real-time-messaging';
-import { useAuth } from '@/hooks/use-auth';
+import { useState, useRef, useEffect } from 'react';
+import { Send, Paperclip, Image, FileText, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, SendHorizontal, CheckCheck } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useAuth } from '@/hooks/use-auth';
+import { useMessaging } from '@/lib/context/MessagingProvider';
+import { Message } from '@/hooks/use-real-time-messaging';
 import { formatDistanceToNow } from 'date-fns';
 
 interface ChatInterfaceProps {
   conversationId: number;
-  recipientId: number;
   recipientName: string;
-  recipientAvatarUrl?: string;
+  recipientAvatar?: string;
 }
 
-export function ChatInterface({ 
-  conversationId,
-  recipientId, 
-  recipientName,
-  recipientAvatarUrl
-}: ChatInterfaceProps) {
+export function ChatInterface({ conversationId, recipientName, recipientAvatar }: ChatInterfaceProps) {
   const { user } = useAuth();
-  const [messageText, setMessageText] = useState('');
-  const messageEndRef = useRef<HTMLDivElement>(null);
-  const { 
-    messages, 
-    isLoading, 
-    error, 
-    sendMessage, 
-    markAsRead,
-    refreshMessages
-  } = useRealTimeMessaging({ conversationId });
+  const { messages, sendMessage, sendTypingIndicator, isTyping } = useMessaging();
+  const [message, setMessage] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const endOfMessagesRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const conversationMessages = messages[conversationId] || [];
+  const isRecipientTyping = isTyping[conversationId];
 
-  // Handle scrolling to the bottom on new messages
+  // Scroll to bottom on new message
   useEffect(() => {
-    if (messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (endOfMessagesRef.current) {
+      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [conversationMessages]);
 
-  // Mark messages as read when visible
-  useEffect(() => {
-    const unreadMessages = messages.filter(
-      msg => !msg.is_read && msg.sender_id.toString() !== user?.id.toString()
-    );
-    
-    unreadMessages.forEach(message => {
-      markAsRead(parseInt(message.id));
-    });
-  }, [messages, markAsRead, user?.id]);
-
-  // Handle sending a message
+  // Handle sending message
   const handleSendMessage = async () => {
-    if (!messageText.trim() || !user) return;
+    if ((!message.trim() && attachments.length === 0) || !user) {
+      return;
+    }
+
+    // Handle file uploads if any
+    let attachmentData = null;
+    if (attachments.length > 0) {
+      setIsUploading(true);
+      try {
+        // In a real implementation, you'd upload files to storage here
+        // and get back URLs/identifiers to include with the message
+        
+        // For now, we'll just include the filenames
+        attachmentData = attachments.map(file => ({
+          name: file.name,
+          type: file.type,
+          size: file.size
+        }));
+      } catch (error) {
+        console.error('Error uploading files:', error);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+
+    // Send the message
+    const success = await sendMessage(conversationId, message, attachmentData);
     
-    await sendMessage(messageText, recipientId);
-    setMessageText('');
+    if (success) {
+      setMessage('');
+      setAttachments([]);
+    }
   };
 
-  // Handle pressing Enter to send message
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  // Handle text input
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    // Send typing indicator
+    sendTypingIndicator(conversationId, true);
+  };
+
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  // Remove an attachment
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Handle key press (Ctrl+Enter to send)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name.split(' ')
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
 
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full">
-        <p className="text-destructive">Failed to load messages</p>
-        <Button onClick={refreshMessages} className="mt-2">Retry</Button>
-      </div>
-    );
-  }
+  // Format timestamp
+  const formatMessageTime = (timestamp: string) => {
+    try {
+      const date = new Date(timestamp);
+      return formatDistanceToNow(date, { addSuffix: true });
+    } catch (error) {
+      return '';
+    }
+  };
+
+  // Determine message grouping (for UI styling)
+  const messageGrouping = (message: Message, index: number) => {
+    const isCurrentUser = message.senderId === user?.id;
+    const prevMessage = index > 0 ? conversationMessages[index - 1] : null;
+    const nextMessage = index < conversationMessages.length - 1 
+      ? conversationMessages[index + 1] 
+      : null;
+    
+    const isPrevSameSender = prevMessage && prevMessage.senderId === message.senderId;
+    const isNextSameSender = nextMessage && nextMessage.senderId === message.senderId;
+    
+    return {
+      isCurrentUser,
+      isFirstInGroup: !isPrevSameSender,
+      isLastInGroup: !isNextSameSender
+    };
+  };
 
   return (
-    <Card className="flex flex-col h-full border rounded-lg shadow-sm">
-      <CardHeader className="border-b py-3">
-        <CardTitle className="flex items-center gap-2">
+    <div className="flex flex-col h-full bg-background-card rounded-lg shadow-md overflow-hidden">
+      {/* Chat header */}
+      <div className="flex items-center justify-between p-4 border-b border-border">
+        <div className="flex items-center space-x-3">
           <Avatar>
-            {recipientAvatarUrl ? (
-              <AvatarImage src={recipientAvatarUrl} alt={recipientName} />
-            ) : (
-              <AvatarFallback>{recipientName.substring(0, 2).toUpperCase()}</AvatarFallback>
-            )}
+            <AvatarImage src={recipientAvatar} alt={recipientName} />
+            <AvatarFallback>{getInitials(recipientName)}</AvatarFallback>
           </Avatar>
-          <span>{recipientName}</span>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">
-            No messages yet. Start the conversation!
+          <div>
+            <h3 className="font-medium text-lg">{recipientName}</h3>
+            {isRecipientTyping && (
+              <p className="text-xs text-primary animate-pulse">Typing...</p>
+            )}
           </div>
-        ) : (
-          messages.map((message: Message) => {
-            const isFromUser = message.sender_id.toString() === user?.id.toString();
-            return (
-              <div 
-                key={message.id}
-                className={`flex ${isFromUser ? 'justify-end' : 'justify-start'}`}
-              >
-                <div 
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    isFromUser 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'bg-muted'
-                  }`}
+        </div>
+      </div>
+
+      {/* Messages area */}
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4">
+          {conversationMessages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+              <p>No messages yet</p>
+              <p className="text-sm">Start the conversation by sending a message</p>
+            </div>
+          ) : (
+            conversationMessages.map((msg, index) => {
+              const { isCurrentUser, isFirstInGroup, isLastInGroup } = messageGrouping(msg, index);
+              
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className="mb-1">{message.content}</div>
-                  <div className="flex items-center justify-end gap-1 text-xs opacity-70">
-                    <span>
-                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                    </span>
-                    {isFromUser && message.is_read && (
-                      <CheckCheck className="w-3 h-3" />
-                    )}
+                  <div className="flex flex-col max-w-[80%]">
+                    <div 
+                      className={`
+                        flex 
+                        ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} 
+                        items-end gap-2
+                      `}
+                    >
+                      {isFirstInGroup && !isCurrentUser && (
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={recipientAvatar} alt={recipientName} />
+                          <AvatarFallback>{getInitials(recipientName)}</AvatarFallback>
+                        </Avatar>
+                      )}
+                      
+                      <div 
+                        className={`
+                          rounded-lg p-3 
+                          ${isCurrentUser 
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-secondary text-secondary-foreground'
+                          }
+                          ${isFirstInGroup && isCurrentUser ? 'rounded-tr-none' : ''}
+                          ${isFirstInGroup && !isCurrentUser ? 'rounded-tl-none' : ''}
+                        `}
+                      >
+                        <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                        
+                        {/* Attachments if any */}
+                        {msg.attachments && Array.isArray(msg.attachments) && msg.attachments.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            {msg.attachments.map((attachment, i) => (
+                              <div key={i} className="flex items-center gap-1 text-sm">
+                                {attachment.type.startsWith('image/') ? (
+                                  <Image className="h-4 w-4" />
+                                ) : (
+                                  <FileText className="h-4 w-4" />
+                                )}
+                                <span>{attachment.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        <div 
+                          className={`
+                            text-xs mt-1 
+                            ${isCurrentUser 
+                              ? 'text-primary-foreground/70' 
+                              : 'text-secondary-foreground/70'
+                            }
+                          `}
+                        >
+                          {formatMessageTime(msg.createdAt)}
+                        </div>
+                      </div>
+                      
+                      {isFirstInGroup && isCurrentUser && (
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage 
+                            src={user?.avatarUrl || ''} 
+                            alt={user?.fullName || ''} 
+                          />
+                          <AvatarFallback>
+                            {getInitials(user?.fullName || '')}
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                    </div>
                   </div>
                 </div>
+              );
+            })
+          )}
+          
+          {/* Message end marker for scrolling */}
+          <div ref={endOfMessagesRef} />
+        </div>
+      </ScrollArea>
+
+      {/* Attachment preview */}
+      {attachments.length > 0 && (
+        <div className="px-4 py-2 border-t border-border">
+          <div className="flex flex-wrap gap-2">
+            {attachments.map((file, index) => (
+              <div 
+                key={index} 
+                className="flex items-center gap-1 bg-secondary rounded px-2 py-1"
+              >
+                {file.type.startsWith('image/') ? (
+                  <Image className="h-3 w-3" />
+                ) : (
+                  <FileText className="h-3 w-3" />
+                )}
+                <span className="text-xs truncate max-w-[100px]">
+                  {file.name}
+                </span>
+                <button 
+                  onClick={() => removeAttachment(index)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
-            );
-          })
-        )}
-        <div ref={messageEndRef} />
-      </CardContent>
-      
-      <CardFooter className="border-t p-4">
-        <div className="flex w-full gap-2">
-          <Textarea
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message..."
-            className="flex-1 min-h-[50px] resize-none"
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Message input */}
+      <div className="p-4 border-t border-border">
+        <div className="flex gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+            multiple
           />
+          
           <Button 
-            onClick={handleSendMessage} 
-            disabled={!messageText.trim()}
-            className="self-end"
+            size="icon" 
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+            className="shrink-0"
+            disabled={isUploading}
+            aria-label="Attach files"
           >
-            <SendHorizontal className="w-5 h-5" />
+            <Paperclip className="h-5 w-5" />
+          </Button>
+          
+          <Textarea
+            value={message}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a message..."
+            className="min-h-[2.5rem] max-h-32 flex-1"
+            disabled={isUploading}
+          />
+          
+          <Button 
+            size="icon" 
+            onClick={handleSendMessage}
+            className="shrink-0"
+            disabled={(!message.trim() && attachments.length === 0) || isUploading}
+            aria-label="Send message"
+          >
+            <Send className="h-5 w-5" />
           </Button>
         </div>
-      </CardFooter>
-    </Card>
+        
+        <div className="mt-2 text-xs text-muted-foreground">
+          Press Ctrl+Enter to send
+        </div>
+      </div>
+    </div>
   );
 }
