@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 // Define the registration schema
 const registrationSchema = z.object({
@@ -23,10 +23,15 @@ const registrationSchema = z.object({
 export type RegistrationFormValues = z.infer<typeof registrationSchema>;
 
 export default function SignUp() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const { user, registerMutation } = useAuth();
   const [, navigate] = useLocation();
-  const { loginUser } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -39,32 +44,11 @@ export default function SignUp() {
   });
 
   const onSubmit = async (data: RegistrationFormValues) => {
-    setIsLoading(true);
-    try {
-      const response = await apiRequest("POST", "/api/auth/register", data);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
+    registerMutation.mutate(data, {
+      onSuccess: () => {
+        navigate('/onboarding');
       }
-      
-      const userData = await response.json();
-      loginUser(userData);
-      toast({
-        title: "Registration Successful",
-        description: "Welcome to ManageTheFans Portal!",
-      });
-      navigate("/onboarding");
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration Failed",
-        description: error instanceof Error ? error.message : "An error occurred during registration",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
@@ -131,8 +115,8 @@ export default function SignUp() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
+              <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                {registerMutation.isPending ? (
                   <div className="flex items-center justify-center">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                     <span className="ml-2">Creating Account...</span>
