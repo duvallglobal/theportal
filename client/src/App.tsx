@@ -18,7 +18,10 @@ import RentMen from "./pages/RentMen";
 import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import NotFound from "./pages/not-found";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserDetails from "./pages/admin/UserDetails";
 import { ThemeProvider } from "next-themes";
+import { AdminRoute } from "./lib/admin-route";
 
 // Auth wrapper to protect routes
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -40,36 +43,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
   
   if (!user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-  
-  return <>{children}</>;
-}
-
-// Admin route wrapper
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  const [, navigate] = useLocation();
-  
-  useEffect(() => {
-    if (!isLoading && (!user || user.role !== "admin")) {
-      navigate("/dashboard");
-    }
-  }, [user, isLoading, navigate]);
-  
-  if (isLoading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-  
-  if (user.role !== "admin") {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -156,7 +129,18 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      {/* Admin Routes - Temporarily removed */}
+      {/* Admin Routes */}
+      <AdminRoute path="/admin" component={() => (
+        <SidebarLayout>
+          <AdminDashboard />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/users/:id" component={() => (
+        <SidebarLayout>
+          <UserDetails />
+        </SidebarLayout>
+      )} />
 
       {/* Redirect from root to dashboard */}
       <Route path="/">
