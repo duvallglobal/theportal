@@ -11,6 +11,8 @@ import path from "path";
 import fs from "fs";
 import { Resend } from "resend";
 import { handleUpdateOnboardingStep } from "./routes/onboarding";
+import { WebSocketServer, WebSocket } from 'ws';
+import twilio from 'twilio';
 
 // Initialize Stripe if API key exists
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -26,6 +28,23 @@ const resendApiKey = process.env.RESEND_API_KEY;
 let resend: Resend | undefined;
 if (resendApiKey) {
   resend = new Resend(resendApiKey);
+}
+
+// Initialize Twilio if API keys exist
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+let twilioClient: twilio.Twilio | undefined;
+
+if (twilioAccountSid && twilioAuthToken && twilioAccountSid.startsWith('AC')) {
+  try {
+    twilioClient = twilio(twilioAccountSid, twilioAuthToken);
+    console.log("Twilio client initialized");
+  } catch (error) {
+    console.error("Error initializing Twilio client:", error);
+  }
+} else {
+  console.warn("Twilio credentials missing or invalid. SMS functionality will be unavailable.");
 }
 
 // Configure file uploads
@@ -74,6 +93,51 @@ const validateAdmin = async (req: any, res: any, next: any) => {
   }
   next();
 };
+
+// Function to send SMS notifications
+async function sendSmsNotification(to: string, message: string): Promise<boolean> {
+  if (!twilioClient || !twilioPhoneNumber) {
+    console.warn("Twilio not configured. SMS not sent.");
+    return false;
+  }
+
+  try {
+    const result = await twilioClient.messages.create({
+      body: message,
+      from: twilioPhoneNumber,
+      to: to
+    });
+    
+    console.log(`SMS sent successfully: ${result.sid}`);
+    return true;
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+    return false;
+  }
+}
+
+// WebSocket clients store
+interface WSClient {
+  userId: number;
+  username: string;
+  role: string;
+  connection: WebSocket;
+}
+
+let wsClients: WSClient[] = [];
+
+// WebSocket message types
+type WSMessageType = 'message' | 'notification' | 'status' | 'typing' | 'read' | 'appointment';
+
+interface WSMessage {
+  type: WSMessageType;
+  data: any;
+  sender: {
+    id: number;
+    username: string;
+  };
+  timestamp: number;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication with Passport
