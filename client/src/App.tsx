@@ -37,6 +37,8 @@ import { OnboardingProvider } from "./hooks/use-onboarding";
 import { OnboardingTooltipContainer } from "./components/ui/onboarding-tooltip";
 import { HelpButton } from "./components/ui/help-button";
 import { MessagingProvider } from "./lib/context/MessagingProvider";
+// Import the new loading components
+import { LoadingSpinner, FullPageLoading } from "@/components/ui/loading";
 
 // Component to handle root path redirects
 function RootRedirect() {
@@ -59,7 +61,7 @@ function RootRedirect() {
   
   return (
     <div className="flex h-screen w-full items-center justify-center">
-      <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      <LoadingSpinner size="lg" variant="primary" withText text="Loading..." />
     </div>
   );
 }
@@ -78,7 +80,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (isLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <LoadingSpinner size="lg" variant="primary" withText text="Authenticating..." />
       </div>
     );
   }
@@ -86,7 +88,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+        <LoadingSpinner size="lg" variant="primary" withText text="Redirecting..." />
       </div>
     );
   }
