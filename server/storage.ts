@@ -158,13 +158,83 @@ export class MemStorage implements IStorage {
       rentMenSettings: 1,
     };
 
-    // Initialize with admin user
-    this.createUser({
+    // Initialize with test users
+    this.initializeTestUsers();
+  }
+
+  private async initializeTestUsers() {
+    // Create admin user
+    const adminUser = await this.createUser({
       username: "admin",
       password: "$2a$10$iqJSHD.BGr0E2IxQwYgJmeP3NvhPrXAeLSaGCj6IR/XU5QtjVu5Tm", // "secret" hashed with bcrypt
       email: "admin@managethefans.com",
       fullName: "Admin User",
-      role: "admin"
+      role: "admin",
+      phone: "+1234567890"
+    });
+
+    // Create test OnlyFans creator
+    const onlyFansUser = await this.createUser({
+      username: "creator1",
+      password: "$2a$10$iqJSHD.BGr0E2IxQwYgJmeP3NvhPrXAeLSaGCj6IR/XU5QtjVu5Tm", // "secret" hashed with bcrypt
+      email: "creator@example.com",
+      fullName: "Test Creator",
+      role: "client",
+      phone: "+1987654321",
+      plan: "premium"
+    });
+
+    // Create test Rent.Men masseur
+    const rentMenUser = await this.createUser({
+      username: "masseur1",
+      password: "$2a$10$iqJSHD.BGr0E2IxQwYgJmeP3NvhPrXAeLSaGCj6IR/XU5QtjVu5Tm", // "secret" hashed with bcrypt
+      email: "masseur@example.com",
+      fullName: "Test Masseur",
+      role: "client",
+      phone: "+1555555555",
+      plan: "basic"
+    });
+
+    // Create profiles for test users
+    await this.createProfile({
+      userId: onlyFansUser.id,
+      preferredContactMethod: "email",
+      preferredCheckInTime: "morning",
+      timezone: "America/New_York",
+      brandDescription: "Lifestyle content creator",
+      voiceTone: "playful",
+      doNotSayTerms: "explicit terms",
+      uploadFrequency: "weekly",
+      birthDate: "1990-01-01"
+    });
+
+    await this.createProfile({
+      userId: rentMenUser.id,
+      preferredContactMethod: "sms",
+      preferredCheckInTime: "evening",
+      timezone: "America/Los_Angeles",
+      brandDescription: "Professional massage therapist",
+      voiceTone: "professional",
+      doNotSayTerms: null,
+      uploadFrequency: "bi-weekly",
+      birthDate: "1985-05-15"
+    });
+
+    // Create platform accounts
+    await this.createPlatformAccount({
+      userId: onlyFansUser.id,
+      platformType: "OnlyFans",
+      username: "testcreator",
+      password: "encrypted_password_would_go_here",
+      needsCreation: false
+    });
+
+    await this.createPlatformAccount({
+      userId: rentMenUser.id,
+      platformType: "RentMen",
+      username: "testmasseur",
+      password: "encrypted_password_would_go_here",
+      needsCreation: false
     });
   }
 
@@ -196,6 +266,10 @@ export class MemStorage implements IStorage {
       onboardingStatus: "incomplete",
       onboardingStep: 1,
       verificationStatus: "pending",
+      phone: user.phone || null,
+      plan: user.plan || null,
+      stripeCustomerId: null,
+      stripeSubscriptionId: null,
     };
     this.usersMap.set(id, newUser);
     return newUser;
