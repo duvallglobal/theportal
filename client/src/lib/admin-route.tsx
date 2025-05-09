@@ -18,8 +18,9 @@ export function AdminRoute({
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        navigate("/sign-in");
+        navigate("/auth");
       } else if (user.role !== "admin") {
+        console.log("User is not admin:", user.role);
         setShowAccessDenied(true);
       }
     }

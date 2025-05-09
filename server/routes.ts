@@ -165,6 +165,70 @@ interface WSMessage {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication with Passport
   const authMiddleware = setupAuth(app);
+  
+  // Admin API Routes
+  app.get("/api/admin/users", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      
+      // Remove sensitive data
+      const sanitizedUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  // Get pending verifications (admin only)
+  app.get("/api/admin/verifications/pending", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const pendingVerifications = users
+        .filter(user => user.verificationStatus === "pending")
+        .map(user => {
+          const { password, ...userWithoutPassword } = user;
+          return userWithoutPassword;
+        });
+      
+      res.json(pendingVerifications);
+    } catch (error) {
+      console.error("Error fetching pending verifications:", error);
+      res.status(500).json({ message: "Failed to fetch pending verifications" });
+    }
+  });
+  
+  // Get pending content (admin only)
+  app.get("/api/admin/content/pending", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      // Get all media files that are pending approval
+      const allMedia = await Promise.all(
+        (await storage.getAllUsers()).map(async user => {
+          const media = await storage.getMediaFilesByUserId(user.id);
+          return media.filter(m => m.status === "pending").map(m => ({
+            ...m,
+            user: {
+              id: user.id,
+              username: user.username,
+              fullName: user.fullName
+            }
+          }));
+        })
+      );
+      
+      // Flatten the array of arrays
+      const pendingContent = allMedia.flat();
+      
+      res.json(pendingContent);
+    } catch (error) {
+      console.error("Error fetching pending content:", error);
+      res.status(500).json({ message: "Failed to fetch pending content" });
+    }
+  });
   // Auth routes
   app.post("/api/auth/register", async (req, res, next) => {
     try {

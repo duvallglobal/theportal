@@ -170,6 +170,12 @@ function Router() {
       </Route>
 
       {/* Admin Routes */}
+      <AdminRoute path="/admin/dashboard" component={() => (
+        <SidebarLayout>
+          <AdminDashboard />
+        </SidebarLayout>
+      )} />
+      
       <AdminRoute path="/admin" component={() => (
         <SidebarLayout>
           <AdminDashboard />
