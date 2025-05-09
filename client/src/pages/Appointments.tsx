@@ -1,347 +1,213 @@
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { format, addHours } from 'date-fns';
-import {
-  CalendarIcon,
-  MapPin,
-  User,
-  Clock,
-  Info,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-} from 'lucide-react';
-
-// Sample appointment data
-const appointments = [
-  {
-    id: '1',
-    title: 'Client Meeting',
-    clientName: 'John Smith',
-    date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-    duration: 2, // hours
-    location: 'Downtown Hotel, Room 315',
-    notes: 'Client requested discretion, first-time meeting',
-    status: 'confirmed',
-  },
-  {
-    id: '2',
-    title: 'Photo Session',
-    clientName: 'Studio X Photography',
-    date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // In 4 days
-    duration: 3, // hours
-    location: 'Studio One, 123 Main St',
-    notes: 'Bring 3 outfit changes, makeup will be provided',
-    status: 'pending',
-  },
-  {
-    id: '3',
-    title: 'Video Shoot',
-    clientName: 'Creative Productions',
-    date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // In 7 days
-    duration: 5, // hours
-    location: 'Beach Location - details to be confirmed',
-    notes: 'Outdoor shoot, weather dependent',
-    status: 'pending',
-  }
-];
-
-const statusColors = {
-  confirmed: 'text-green-400 bg-green-400 bg-opacity-10',
-  pending: 'text-yellow-400 bg-yellow-400 bg-opacity-10',
-  cancelled: 'text-red-400 bg-red-400 bg-opacity-10',
-};
-
-const statusIcons = {
-  confirmed: <CheckCircle className="h-5 w-5 text-green-400" />,
-  pending: <AlertCircle className="h-5 w-5 text-yellow-400" />,
-  cancelled: <XCircle className="h-5 w-5 text-red-400" />,
-};
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AppointmentProposalCard } from "@/components/client/AppointmentProposalCard";
+import { CalendarCheck, CalendarX } from "lucide-react";
 
 export default function Appointments() {
   const { toast } = useToast();
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [viewingAppointment, setViewingAppointment] = useState<any | null>(null);
-  
-  // Filter appointments for the selected date
-  const filteredAppointments = date 
-    ? appointments.filter(apt => 
-        apt.date.getDate() === date.getDate() && 
-        apt.date.getMonth() === date.getMonth() &&
-        apt.date.getFullYear() === date.getFullYear()
-      )
-    : [];
 
-  const handleConfirmAppointment = (appointmentId: string) => {
-    toast({
-      title: "Appointment confirmed",
-      description: "The appointment has been confirmed successfully.",
-    });
-  };
+  // Fetch client appointments
+  const { data: appointments, isLoading, error } = useQuery({
+    queryKey: ["/api/appointments/client"],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", "/api/appointments/client");
+        return res.json();
+      } catch (error) {
+        throw new Error("Failed to fetch appointments");
+      }
+    },
+  });
 
-  const handleCancelAppointment = (appointmentId: string) => {
+  // Display error if fetching appointments fails
+  if (error) {
     toast({
-      title: "Appointment cancelled",
-      description: "The appointment has been cancelled.",
+      title: "Error",
+      description: "Failed to load appointments. Please try again later.",
+      variant: "destructive",
     });
-  };
+  }
+
+  // Filter appointments by status
+  const pendingAppointments = appointments?.filter((appointment: any) => appointment.status === "pending") || [];
+  const approvedAppointments = appointments?.filter((appointment: any) => appointment.status === "approved") || [];
+  const otherAppointments = appointments?.filter((appointment: any) => 
+    appointment.status !== "pending" && appointment.status !== "approved"
+  ) || [];
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-white">Appointments</h1>
-        <p className="text-gray-400 mt-1">View and manage your appointments</p>
+    <div className="container mx-auto py-8 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Appointments</h1>
+        <p className="text-muted-foreground">
+          View and manage your appointment proposals.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <Card className="bg-background-card border-background-lighter lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="text-white">Calendar</CardTitle>
-            <CardDescription>Select a date to view appointments</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="bg-background-lighter rounded-md p-4"
-            />
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="pending" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="pending" className="relative">
+            Pending
+            {pendingAppointments.length > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-white">
+                {pendingAppointments.length}
+              </span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="approved">Approved</TabsTrigger>
+          <TabsTrigger value="archive">Archive</TabsTrigger>
+        </TabsList>
 
-        {/* Daily Schedule */}
-        <Card className="bg-background-card border-background-lighter lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-white">
-              {date ? format(date, 'MMMM d, yyyy') : 'Select a Date'}
-            </CardTitle>
-            <CardDescription>
-              {filteredAppointments.length === 0 
-                ? 'No appointments scheduled for this day' 
-                : `${filteredAppointments.length} appointment(s) scheduled`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {filteredAppointments.length === 0 ? (
-                <div className="py-8 text-center">
-                  <p className="text-gray-400">No appointments for this day</p>
-                  <Button variant="outline" className="mt-4">
-                    Request an Appointment
-                  </Button>
+        {/* Pending Appointments */}
+        <TabsContent value="pending">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending Appointment Proposals</CardTitle>
+              <CardDescription>
+                These appointments require your response. Please review and either approve or decline.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                // Loading skeletons
+                <div className="space-y-6">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : pendingAppointments.length === 0 ? (
+                // Empty state
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CalendarCheck className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No pending appointments</h3>
+                  <p className="text-muted-foreground max-w-md mt-1">
+                    You don't have any appointment proposals that need your response at this time.
+                  </p>
                 </div>
               ) : (
-                filteredAppointments.map((apt) => (
-                  <div 
-                    key={apt.id} 
-                    className="p-4 bg-background-lighter rounded-lg cursor-pointer hover:bg-background-card transition-colors"
-                    onClick={() => setViewingAppointment(apt)}
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="text-white font-medium">{apt.title}</h3>
-                        <div className="flex items-center text-gray-400 text-sm mt-1">
-                          <User className="h-4 w-4 mr-2" />
-                          <span>{apt.clientName}</span>
-                        </div>
-                      </div>
-                      <div className={`px-3 py-1 rounded-full flex items-center ${statusColors[apt.status as keyof typeof statusColors]}`}>
-                        {statusIcons[apt.status as keyof typeof statusIcons]}
-                        <span className="ml-1 text-xs font-medium">
-                          {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center text-gray-400 text-sm">
-                      <Clock className="h-4 w-4 mr-2" />
-                      <span>
-                        {format(apt.date, 'h:mm a')} - {format(addHours(apt.date, apt.duration), 'h:mm a')}
-                        <span className="ml-1 text-gray-500">{apt.duration}hr</span>
-                      </span>
-                    </div>
-                    <div className="flex items-center text-gray-400 text-sm mt-2">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span>{apt.location}</span>
-                    </div>
-                  </div>
-                ))
+                // Appointment cards
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {pendingAppointments.map((appointment: any) => (
+                    <AppointmentProposalCard
+                      key={appointment.id}
+                      appointment={appointment}
+                    />
+                  ))}
+                </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Upcoming Appointments */}
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold text-white mb-4">Upcoming Appointments</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {appointments.map((apt) => (
-            <Card key={apt.id} className="bg-background-card border-background-lighter">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-white">{apt.title}</CardTitle>
-                  <div className={`px-3 py-1 rounded-full flex items-center ${statusColors[apt.status as keyof typeof statusColors]}`}>
-                    {statusIcons[apt.status as keyof typeof statusIcons]}
-                    <span className="ml-1 text-xs font-medium">
-                      {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
-                    </span>
-                  </div>
+        {/* Approved Appointments */}
+        <TabsContent value="approved">
+          <Card>
+            <CardHeader>
+              <CardTitle>Approved Appointments</CardTitle>
+              <CardDescription>
+                These are the appointments you have approved. Make sure to mark your calendar.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                // Loading skeletons
+                <div className="space-y-6">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  ))}
                 </div>
-                <CardDescription className="mt-2">
-                  {format(apt.date, 'EEEE, MMMM d, yyyy')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center text-gray-300">
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span>
-                      {format(apt.date, 'h:mm a')} - {format(addHours(apt.date, apt.duration), 'h:mm a')}
-                    </span>
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <User className="h-4 w-4 mr-2" />
-                    <span>{apt.clientName}</span>
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    <span>{apt.location}</span>
-                  </div>
-                  <div className="flex items-start text-gray-300">
-                    <Info className="h-4 w-4 mr-2 mt-1" />
-                    <span className="text-sm">{apt.notes}</span>
-                  </div>
+              ) : approvedAppointments.length === 0 ? (
+                // Empty state
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CalendarCheck className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No approved appointments</h3>
+                  <p className="text-muted-foreground max-w-md mt-1">
+                    You don't have any approved appointments at this time.
+                  </p>
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setViewingAppointment(apt)}
-                >
-                  View Details
-                </Button>
-                {apt.status === 'pending' && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleConfirmAppointment(apt.id)}
-                  >
-                    Confirm
-                  </Button>
-                )}
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-      </div>
+              ) : (
+                // Appointment cards
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {approvedAppointments.map((appointment: any) => (
+                    <AppointmentProposalCard
+                      key={appointment.id}
+                      appointment={appointment}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Appointment Details Dialog */}
-      <Dialog open={!!viewingAppointment} onOpenChange={(open) => !open && setViewingAppointment(null)}>
-        {viewingAppointment && (
-          <DialogContent className="bg-background-card text-white">
-            <DialogHeader>
-              <DialogTitle className="text-xl">{viewingAppointment.title}</DialogTitle>
-              <DialogDescription>
-                Appointment details and options
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="flex items-center justify-between">
-                <div className="text-gray-400">Status</div>
-                <div className={`px-3 py-1 rounded-full flex items-center ${statusColors[viewingAppointment.status]}`}>
-                  {statusIcons[viewingAppointment.status]}
-                  <span className="ml-1 text-sm font-medium">
-                    {viewingAppointment.status.charAt(0).toUpperCase() + viewingAppointment.status.slice(1)}
-                  </span>
+        {/* Archived Appointments */}
+        <TabsContent value="archive">
+          <Card>
+            <CardHeader>
+              <CardTitle>Archived Appointments</CardTitle>
+              <CardDescription>
+                View past declined or canceled appointments.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                // Loading skeletons
+                <div className="space-y-6">
+                  {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-1/4" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  ))}
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-gray-400">Date & Time</div>
-                <div className="text-white">
-                  {format(viewingAppointment.date, 'EEEE, MMMM d, yyyy')} · {format(viewingAppointment.date, 'h:mm a')}
+              ) : otherAppointments.length === 0 ? (
+                // Empty state
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <CalendarX className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-medium">No archived appointments</h3>
+                  <p className="text-muted-foreground max-w-md mt-1">
+                    There are no declined or canceled appointments in your archive.
+                  </p>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-gray-400">Duration</div>
-                <div className="text-white">{viewingAppointment.duration} hours</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-gray-400">Client</div>
-                <div className="text-white">{viewingAppointment.clientName}</div>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="text-gray-400">Location</div>
-                <div className="text-white">{viewingAppointment.location}</div>
-              </div>
-              <div className="pt-2">
-                <div className="text-gray-400 mb-2">Notes</div>
-                <div className="bg-background-lighter p-3 rounded-lg text-white text-sm">
-                  {viewingAppointment.notes}
+              ) : (
+                // Appointment cards
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {otherAppointments.map((appointment: any) => (
+                    <AppointmentProposalCard
+                      key={appointment.id}
+                      appointment={appointment}
+                    />
+                  ))}
                 </div>
-              </div>
-            </div>
-            <DialogFooter className="flex justify-between">
-              {viewingAppointment.status !== 'cancelled' && (
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    handleCancelAppointment(viewingAppointment.id);
-                    setViewingAppointment(null);
-                  }}
-                >
-                  Cancel Appointment
-                </Button>
               )}
-              {viewingAppointment.status === 'pending' && (
-                <Button
-                  onClick={() => {
-                    handleConfirmAppointment(viewingAppointment.id);
-                    setViewingAppointment(null);
-                  }}
-                >
-                  Confirm Appointment
-                </Button>
-              )}
-              {viewingAppointment.status === 'confirmed' && (
-                <Button onClick={() => setViewingAppointment(null)}>
-                  Close
-                </Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        )}
-      </Dialog>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

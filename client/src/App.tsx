@@ -20,6 +20,7 @@ import SignUp from "./pages/auth/SignUp";
 import NotFound from "./pages/not-found";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserDetails from "./pages/admin/UserDetails";
+import AppointmentManager from "./pages/admin/AppointmentManager";
 import { ThemeProvider } from "next-themes";
 import { AdminRoute } from "./lib/admin-route";
 
