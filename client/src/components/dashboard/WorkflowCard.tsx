@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
 
@@ -22,8 +22,17 @@ export function WorkflowCard({
   linkPath,
   className
 }: WorkflowCardProps) {
+  const [, navigate] = useLocation();
+  
+  const handleClick = () => {
+    navigate(linkPath);
+  };
+  
   return (
-    <div className={cn("bg-background-card rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden", className)}>
+    <div 
+      className={cn("bg-background-card rounded-xl shadow-md hover:shadow-xl transition-shadow overflow-hidden cursor-pointer", className)}
+      onClick={handleClick}
+    >
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-white">{title}</h3>
@@ -32,12 +41,10 @@ export function WorkflowCard({
           </div>
         </div>
         <p className="text-gray-400 mb-6">{description}</p>
-        <Link href={linkPath}>
-          <a className="text-primary hover:text-primary-light font-medium flex items-center">
-            <span>{linkText}</span>
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </a>
-        </Link>
+        <div className="text-primary hover:text-primary-light font-medium flex items-center">
+          <span>{linkText}</span>
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </div>
       </div>
     </div>
   );

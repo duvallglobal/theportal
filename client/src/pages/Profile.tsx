@@ -34,7 +34,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { Lock, Shield, User as UserIcon, AtSign, Eye, EyeOff } from "lucide-react";
-import { useAuth } from "@/lib/context/AuthContext";
+import { useAuth } from "@/hooks/use-auth";
 
 // Personal Information Schema
 const personalInfoSchema = z.object({

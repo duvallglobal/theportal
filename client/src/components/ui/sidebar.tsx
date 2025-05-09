@@ -12,8 +12,10 @@ import {
   Bell,
   Users,
   LogOut,
+  X,
 } from "lucide-react";
-import { UserButton } from "@clerk/clerk-react";
+// We'll replace Clerk's UserButton with our own user dropdown
+import { ChevronDown } from "lucide-react";
 
 interface SidebarProps {
   id?: string;
@@ -121,22 +123,21 @@ export function Sidebar({
           <ul className="space-y-2">
             {filteredNavItems.map((item) => (
               <li key={item.path}>
-                <Link href={item.path}>
-                  <a
-                    className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-                      location === item.path
-                        ? "text-white bg-primary"
-                        : "text-gray-300 hover:bg-background-lighter hover:text-white"
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.name}</span>
-                    {item.badge && (
-                      <span className="ml-auto bg-primary-light text-white text-xs font-semibold px-2 py-1 rounded-full">
-                        {item.badge}
-                      </span>
-                    )}
-                  </a>
+                <Link 
+                  href={item.path}
+                  className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
+                    location === item.path
+                      ? "text-white bg-primary"
+                      : "text-gray-300 hover:bg-background-lighter hover:text-white"
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.name}</span>
+                  {item.badge && (
+                    <span className="ml-auto bg-primary-light text-white text-xs font-semibold px-2 py-1 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
                 </Link>
               </li>
             ))}
@@ -145,7 +146,9 @@ export function Sidebar({
       </div>
       <div className="absolute bottom-0 left-0 right-0 p-6">
         <div className="flex items-center space-x-3">
-          <UserButton />
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
+            {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+          </div>
           <div>
             <h4 className="text-sm font-medium text-white">
               {user?.fullName || "User"}
