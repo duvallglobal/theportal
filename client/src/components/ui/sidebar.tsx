@@ -45,9 +45,14 @@ export function Sidebar({
       icon: <LayoutDashboard className="w-5 h-5 mr-3" />,
     },
     {
+      name: "Clients Management",
+      path: "/admin/clients",
+      icon: <Users className="w-5 h-5 mr-3" />,
+    },
+    {
       name: "User Management",
       path: "/admin/users",
-      icon: <Users className="w-5 h-5 mr-3" />,
+      icon: <User className="w-5 h-5 mr-3" />,
     },
     {
       name: "Appointment Manager",
@@ -62,7 +67,7 @@ export function Sidebar({
     {
       name: "Verification Queue",
       path: "/admin/verification-queue",
-      icon: <User className="w-5 h-5 mr-3" />,
+      icon: <UserPlus className="w-5 h-5 mr-3" />,
     },
     {
       name: "Billing Management",

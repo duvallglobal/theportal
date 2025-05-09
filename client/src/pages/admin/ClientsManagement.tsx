@@ -131,7 +131,7 @@ export default function ClientsManagement() {
       case 'pending':
         return <Badge variant="secondary">Pending</Badge>;
       case 'verified':
-        return <Badge variant="success">Verified</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600">Verified</Badge>;
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       default:
@@ -147,9 +147,9 @@ export default function ClientsManagement() {
       case 'in_progress':
         return <Badge variant="secondary">Step {step || 0}/8</Badge>;
       case 'complete':
-        return <Badge variant="success">Complete</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600">Complete</Badge>;
       case 'incomplete':
-        return <Badge variant="warning">Incomplete</Badge>;
+        return <Badge className="bg-amber-500 hover:bg-amber-600">Incomplete</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -165,7 +165,7 @@ export default function ClientsManagement() {
       case 'pro':
         return <Badge variant="secondary">Pro</Badge>;
       case 'premium':
-        return <Badge variant="success">Premium</Badge>;
+        return <Badge className="bg-green-500 hover:bg-green-600">Premium</Badge>;
       default:
         return <Badge variant="outline">{plan}</Badge>;
     }

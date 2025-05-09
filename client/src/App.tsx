@@ -226,6 +226,12 @@ function Router() {
           <AdminMessaging />
         </SidebarLayout>
       )} />
+      
+      <AdminRoute path="/admin/clients" component={() => (
+        <SidebarLayout>
+          <ClientsManagement />
+        </SidebarLayout>
+      )} />
 
       {/* Redirect from root to auth or dashboard */}
       <Route path="/">
