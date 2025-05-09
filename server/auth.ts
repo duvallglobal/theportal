@@ -9,6 +9,7 @@ import { User } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import bcrypt from "bcryptjs";
 import connectPgSimple from "connect-pg-simple";
+import db from './db';
 
 declare global {
   namespace Express {
@@ -78,7 +79,7 @@ export function setupAuth(app: Express) {
     },
     store: process.env.NODE_ENV === "production" && process.env.DATABASE_URL
       ? new PgStore({
-          conString: process.env.DATABASE_URL,
+          pool: db,
           createTableIfMissing: true,
           tableName: 'session' // Default table name for sessions
         })
@@ -87,6 +88,9 @@ export function setupAuth(app: Express) {
         })
   };
 
+  // Log which session store we're using
+  console.log(`Session store: ${process.env.NODE_ENV === "production" && process.env.DATABASE_URL ? 'PostgreSQL' : 'Memory'}`);
+  
   app.use(session(sessionOptions));
   app.use(passport.initialize());
   app.use(passport.session());
