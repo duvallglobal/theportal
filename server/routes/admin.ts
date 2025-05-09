@@ -4,6 +4,7 @@ import { sendWelcomeEmail, sendVerificationEmail } from '../utils/email';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { insertUserSchema } from '@shared/schema';
+import twilio from 'twilio';
 
 // Initialize router
 const router = Router();
@@ -222,6 +223,104 @@ router.get('/media-files', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error fetching media files:', error);
     res.status(500).json({ message: 'Error fetching media files' });
+  }
+});
+
+// Send welcome email to client
+router.post('/send-welcome-email', async (req: Request, res: Response) => {
+  try {
+    const { email, name } = req.body;
+    
+    if (!email || !name) {
+      return res.status(400).json({ message: 'Email and name are required' });
+    }
+    
+    const success = await sendWelcomeEmail(email, name);
+    
+    if (success) {
+      res.json({ success: true, message: 'Welcome email sent successfully' });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to send welcome email' });
+    }
+  } catch (error) {
+    console.error('Error sending welcome email:', error);
+    res.status(500).json({ success: false, message: 'Error sending welcome email' });
+  }
+});
+
+// Send verification email to client
+router.post('/send-verification-email', async (req: Request, res: Response) => {
+  try {
+    const { email, name } = req.body;
+    
+    if (!email || !name) {
+      return res.status(400).json({ message: 'Email and name are required' });
+    }
+    
+    const success = await sendVerificationEmail(email, name);
+    
+    if (success) {
+      res.json({ success: true, message: 'Verification email sent successfully' });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to send verification email' });
+    }
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    res.status(500).json({ success: false, message: 'Error sending verification email' });
+  }
+});
+
+// Function to format phone number for Twilio
+function formatPhoneNumber(phoneNumber: string): string {
+  // Remove all non-numeric characters
+  const digitsOnly = phoneNumber.replace(/\D/g, '');
+  
+  // Ensure it has country code, add +1 (US) if needed
+  if (digitsOnly.length === 10) {
+    return `+1${digitsOnly}`;
+  } else if (digitsOnly.length > 10 && !phoneNumber.startsWith('+')) {
+    return `+${digitsOnly}`;
+  }
+  
+  // If already has +, just return the cleaned version
+  return phoneNumber.startsWith('+') ? phoneNumber : `+${digitsOnly}`;
+}
+
+// Send SMS notification to client
+router.post('/send-sms', async (req: Request, res: Response) => {
+  try {
+    const { phone, message } = req.body;
+    
+    if (!phone || !message) {
+      return res.status(400).json({ message: 'Phone number and message are required' });
+    }
+    
+    // Initialize Twilio client
+    const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+    
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+      console.warn("Twilio not configured. SMS not sent.");
+      return res.status(500).json({ success: false, message: 'Twilio not configured' });
+    }
+    
+    const twilioClient = twilio(twilioAccountSid, twilioAuthToken);
+    
+    // Format the phone number for Twilio
+    const formattedNumber = formatPhoneNumber(phone);
+    
+    const result = await twilioClient.messages.create({
+      body: message,
+      from: twilioPhoneNumber,
+      to: formattedNumber
+    });
+    
+    console.log(`SMS sent successfully: ${result.sid}`);
+    res.json({ success: true, message: 'SMS sent successfully' });
+  } catch (error) {
+    console.error("Error sending SMS:", error);
+    res.status(500).json({ success: false, message: 'Error sending SMS' });
   }
 });
 

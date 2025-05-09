@@ -27,6 +27,7 @@ import ContentViewer from "./pages/admin/ContentViewer";
 import VerificationQueue from "./pages/admin/VerificationQueue";
 import BillingManagement from "./pages/admin/BillingManagement";
 import AdminMessaging from "./pages/admin/Messaging";
+import ClientsManagement from "./pages/admin/ClientsManagement";
 import { ThemeProvider } from "next-themes";
 import { AdminRoute } from "./lib/admin-route";
 import { OnboardingProvider } from "./hooks/use-onboarding";

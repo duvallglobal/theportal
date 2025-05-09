@@ -167,7 +167,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication with Passport
   const authMiddleware = setupAuth(app);
   
-  // Admin API Routes
+  // Register admin routes
+  app.use('/api/admin', authMiddleware.isAdmin, adminRoutes);
+  
+  // Legacy Admin API Routes
   app.get("/api/admin/users", authMiddleware.isAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
