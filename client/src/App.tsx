@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth, AuthProvider } from "./lib/context/AuthContext";
+import { useAuth, AuthProvider } from "@/hooks/use-auth";
 import SidebarLayout from "./components/layouts/SidebarLayout";
 import Dashboard from "./pages/Dashboard";
 import Onboarding from "./pages/Onboarding";
@@ -21,7 +21,7 @@ import { ThemeProvider } from "next-themes";
 
 // Auth wrapper to protect routes
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   
   if (isLoading) {
@@ -32,7 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!isAuthenticated) {
+  if (!user) {
     navigate("/sign-in");
     return null;
   }
@@ -42,7 +42,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Admin route wrapper
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { isAdmin, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [, navigate] = useLocation();
   
   if (isLoading) {
@@ -53,7 +53,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
     );
   }
   
-  if (!isAdmin) {
+  if (!user || user.role !== "admin") {
     navigate("/dashboard");
     return null;
   }

@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { setupAuth } from "./auth";
 import { insertUserSchema, insertProfileSchema, insertPlatformAccountSchema, insertContentStrategySchema, insertMediaFileSchema, insertVerificationDocumentSchema, insertAppointmentSchema, insertMessageSchema, insertRentMenSettingsSchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
@@ -74,6 +75,8 @@ const validateAdmin = async (req: any, res: any, next: any) => {
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication with Passport
+  setupAuth(app);
   // Auth routes
   app.post("/api/auth/register", async (req, res) => {
     try {
