@@ -8,6 +8,7 @@ import { storage } from "./storage";
 import { User } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import bcrypt from "bcryptjs";
+import connectPgSimple from "connect-pg-simple";
 
 declare global {
   namespace Express {
@@ -32,8 +33,9 @@ declare global {
   }
 }
 
-// Create memory session store to match our in-memory user storage
+// Session store configuration - use PostgreSQL in production, memory store in development
 const MemoryStore = createMemoryStore(session);
+const PgStore = connectPgSimple(session);
 
 // Hash password utilities
 const scryptAsync = promisify(scrypt);
@@ -74,9 +76,15 @@ export function setupAuth(app: Express) {
       httpOnly: true,
       sameSite: 'lax'
     },
-    store: new MemoryStore({
-      checkPeriod: 86400000 // Prune expired entries every 24h
-    })
+    store: process.env.NODE_ENV === "production" && process.env.DATABASE_URL
+      ? new PgStore({
+          conString: process.env.DATABASE_URL,
+          createTableIfMissing: true,
+          tableName: 'session' // Default table name for sessions
+        })
+      : new MemoryStore({
+          checkPeriod: 86400000 // Prune expired entries every 24h
+        })
   };
 
   app.use(session(sessionOptions));
