@@ -1,0 +1,48 @@
+The appointment widget is designed for the admin to initiate and manage appointments by selecting a specific client and entering all relevant details about the appointment. The admin sends this appointment proposal to the selected client, who can then approve or deny the request. This tool facilitates a controlled and professional scheduling process for encounters in the platform.
+
+Functionality Requirements
+Admin Dashboard - Appointment Management
+In the admin dashboard, the appointment widget should include the following features:
+
+Client Selection: A button or dropdown menu that allows the admin to select a specific client from a list of registered clients to whom they want to propose an appointment. This is the starting point of the process.
+Enter Appointment Details: After selecting a client, the admin should have a form or interface to input all relevant details about the proposed appointment, including:
+Photo Attachment: A photo of the client attached by the admin.
+Details About the Encounter: Specific information regarding the encounter (e.g., nature of the meeting, expectations, or other relevant context).
+Financial Details: The total amount the client will earn from the encounter.
+Address: Location details for the encounter.
+Additional Details: Any other relevant information (e.g., date, time, duration, special instructions).
+Send Appointment Proposal: A clear action (e.g., a "Send Proposal" button) to send the proposed appointment details to the selected client for their review.
+Notification Options: When sending the proposal, the admin should have the ability to notify the client through multiple channels:
+Email: Send an email to the client with the appointment proposal details.
+Text Message: Send a text message (SMS) to the client alerting them of the new proposal.
+In-App Notification: Send an in-app notification to alert the client within the platform.
+Status Tracking: Ability to track the status of each sent appointment proposal (e.g., Pending, Approved by Client, Denied by Client) and view the history of proposals for each client.
+Client Dashboard - Appointment Section
+In the client dashboard, the appointment section should focus on receiving and responding to appointment proposals sent by the admin. The following features are required:
+
+View Received Proposals: Clients should see a list of appointment proposals sent to them by the admin, with a status indicator (e.g., Pending Response).
+Approve or Deny Proposal: For each received proposal, clients should have clear options to approve or deny the appointment request. Their response should be communicated back to the admin.
+View Details of Proposals: For each proposal (whether pending, approved, or denied), clients should have access to a detailed view that includes:
+Photo Attachment: A photo of the client attached by the admin.
+Details About the Encounter: Specific information regarding the encounter (e.g., nature of the meeting, expectations, or other relevant context).
+Financial Details: The total amount they will earn from the encounter.
+Address: Location details for the encounter.
+Additional Details: Any other relevant information (e.g., date, time, duration, special instructions).
+No Initiation Functionality: Clients should not have the ability to initiate appointment requests or select admins. Their role is to respond to proposals sent by the admin.
+Additional Notes
+User Experience: Ensure the interface for both admin and client dashboards is intuitive and aligns with the premium, professional design aesthetic of the platform (clean, modern look using Tailwind CSS).
+Data Integration: The widget should integrate with the PostgreSQL database to store and retrieve appointment data, including client selections, proposal details, photo attachments, and response statuses. If database tables for appointments are not yet set up, please provide SQL scripts or instructions to create them.
+Notifications Implementation: Implement a robust notification system to support the following when a proposal is sent or responded to:
+Email: Use a service like AWS SES or similar to send emails to clients with appointment proposal details or updates.
+Text Message (SMS): Integrate with a service like Twilio or Telnyx to send SMS alerts to clients about new proposals or updates.
+In-App Notifications: Develop in-app alerts to notify clients within the platform about new proposals or status changes, and notify admins of client responses (approve/deny).
+Status Updates: Ensure that both admin and client dashboards reflect real-time updates on the status of proposals (e.g., when a client approves or denies, the admin’s view updates accordingly).
+Next Steps
+Please confirm that you understand these requirements for the appointment widget, including the notification options for email, text message, and in-app alerts. If any part of this explanation is unclear, let me know, and I’ll provide further details. Once confirmed, please:
+
+Implement or update the appointment widget in the admin dashboard with the client selection feature, the ability to enter and send appointment proposal details (including the photo attachment of the client), and options to notify the client via email, text message, and in-app notification.
+Adjust the client dashboard to reflect the ability to view, approve, or deny received appointment proposals, with access to all provided details, including the photo attachment.
+Provide a brief overview of the changes made or code snippets for key components of this feature, including the notification system integration.
+If integrations with services like Twilio, Telnyx, or AWS SES are required for notifications, please provide guidance or setup instructions for these integrations.
+Additionally, if the screen loading issue (previously mentioned) is still affecting the visibility of these dashboards, please prioritize resolving that first so I can test the appointment widget functionality in Replit.
+

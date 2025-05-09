@@ -646,43 +646,132 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // Appointments routes
-  app.post("/api/appointments", validateSession, async (req, res) => {
+  
+  // Admin creates an appointment proposal
+  app.post("/api/appointments/propose", validateSession, validateAdmin, async (req, res) => {
     try {
-      const appointmentData = req.body;
+      const { clientId, appointmentDate, duration, location, details, amount, photoUrl, notificationMethod } = req.body;
       
+      // Check if client exists
+      const client = await storage.getUser(clientId);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      // Create appointment proposal
       const appointment = await storage.createAppointment({
-        userId: req.user.id,
-        ...appointmentData
+        adminId: req.user.id,
+        clientId,
+        appointmentDate: new Date(appointmentDate),
+        duration,
+        location,
+        details,
+        amount,
+        photoUrl,
+        notificationMethod
       });
+      
+      // Send notifications based on selected methods
+      if (notificationMethod === 'email' || notificationMethod === 'all') {
+        // In a real implementation, you would integrate with an email service like AWS SES
+        console.log(`Email notification sent to ${client.email} about appointment ${appointment.id}`);
+        
+        // Create a notification record
+        await storage.createNotification({
+          userId: clientId,
+          type: 'appointment',
+          content: `You have a new appointment proposal. Review it in your dashboard.`,
+          deliveryMethod: 'email'
+        });
+      }
+      
+      if (notificationMethod === 'sms' || notificationMethod === 'all') {
+        // In a real implementation, you would integrate with an SMS service like Twilio
+        if (client.phone) {
+          console.log(`SMS notification sent to ${client.phone} about appointment ${appointment.id}`);
+          
+          // Create a notification record
+          await storage.createNotification({
+            userId: clientId,
+            type: 'appointment',
+            content: `You have a new appointment proposal. Review it in your dashboard.`,
+            deliveryMethod: 'sms'
+          });
+        }
+      }
+      
+      // Always create in-app notification
+      await storage.createNotification({
+        userId: clientId,
+        type: 'appointment',
+        content: `You have a new appointment proposal. Review it in your dashboard.`,
+        deliveryMethod: 'in-app'
+      });
+      
+      // Mark notification as sent
+      await storage.updateAppointment(appointment.id, { notificationSent: true });
       
       res.status(201).json(appointment);
     } catch (error) {
-      console.error("Create appointment error:", error);
+      console.error("Create appointment proposal error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
-  app.get("/api/appointments/user/:userId", validateSession, async (req, res) => {
+  // Get all client users (for admin to select from)
+  app.get("/api/users/clients", validateSession, validateAdmin, async (req, res) => {
     try {
-      const userId = parseInt(req.params.userId);
+      const users = await storage.getAllUsers();
+      const clients = users.filter(user => user.role === "client");
       
-      // Only allow users to view their own appointments or admins to view any appointments
-      if (req.user.id !== userId && req.user.role !== "admin") {
-        return res.status(403).json({ message: "Forbidden" });
-      }
+      // Return only necessary info (don't include password or sensitive data)
+      const clientsInfo = clients.map(client => ({
+        id: client.id,
+        fullName: client.fullName,
+        email: client.email,
+        username: client.username,
+        phone: client.phone,
+        verificationStatus: client.verificationStatus
+      }));
       
-      const appointments = await storage.getAppointmentsByUserId(userId);
+      res.json(clientsInfo);
+    } catch (error) {
+      console.error("Get clients error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get appointments for a client
+  app.get("/api/appointments/client", validateSession, async (req, res) => {
+    try {
+      const appointments = await storage.getAppointmentsByClientId(req.user.id);
       res.json(appointments);
     } catch (error) {
-      console.error("Get appointments error:", error);
+      console.error("Get client appointments error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Get all appointments (admin only)
+  app.get("/api/appointments/admin", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const appointments = await storage.getAppointmentsByAdminId(req.user.id);
+      res.json(appointments);
+    } catch (error) {
+      console.error("Get admin appointments error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
-  app.put("/api/appointments/:id", validateSession, async (req, res) => {
+  // Client responds to appointment proposal (approve/decline)
+  app.put("/api/appointments/:id/respond", validateSession, async (req, res) => {
     try {
       const appointmentId = parseInt(req.params.id);
-      const appointmentData = req.body;
+      const { status } = req.body;
+      
+      if (status !== 'approved' && status !== 'declined') {
+        return res.status(400).json({ message: "Status must be 'approved' or 'declined'" });
+      }
       
       const appointment = await storage.getAppointment(appointmentId);
       
@@ -690,15 +779,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Appointment not found" });
       }
       
-      // Only allow users to update their own appointments or admins to update any appointments
-      if (appointment.userId !== req.user.id && req.user.role !== "admin") {
+      // Only allow the client to respond to their own appointment proposals
+      if (appointment.clientId !== req.user.id) {
         return res.status(403).json({ message: "Forbidden" });
       }
       
-      const updatedAppointment = await storage.updateAppointment(appointmentId, appointmentData);
+      const updatedAppointment = await storage.updateAppointment(appointmentId, { status });
+      
+      // Notify admin about the client's response
+      await storage.createNotification({
+        userId: appointment.adminId,
+        type: 'appointment',
+        content: `Client ${req.user.fullName} has ${status} your appointment proposal.`,
+        deliveryMethod: 'in-app'
+      });
+      
       res.json(updatedAppointment);
     } catch (error) {
-      console.error("Update appointment error:", error);
+      console.error("Respond to appointment error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get a specific appointment
+  app.get("/api/appointments/:id", validateSession, async (req, res) => {
+    try {
+      const appointmentId = parseInt(req.params.id);
+      const appointment = await storage.getAppointment(appointmentId);
+      
+      if (!appointment) {
+        return res.status(404).json({ message: "Appointment not found" });
+      }
+      
+      // Only allow users to view appointments they're involved in (as admin or client)
+      if (appointment.adminId !== req.user.id && appointment.clientId !== req.user.id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      res.json(appointment);
+    } catch (error) {
+      console.error("Get appointment error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

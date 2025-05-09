@@ -553,9 +553,22 @@ export class MemStorage implements IStorage {
     return this.appointmentsMap.get(id);
   }
 
+  async getAppointmentsByAdminId(adminId: number): Promise<Appointment[]> {
+    return Array.from(this.appointmentsMap.values()).filter(
+      (appointment) => appointment.adminId === adminId
+    );
+  }
+  
+  async getAppointmentsByClientId(clientId: number): Promise<Appointment[]> {
+    return Array.from(this.appointmentsMap.values()).filter(
+      (appointment) => appointment.clientId === clientId
+    );
+  }
+  
+  // Keep this for backward compatibility
   async getAppointmentsByUserId(userId: number): Promise<Appointment[]> {
     return Array.from(this.appointmentsMap.values()).filter(
-      (appointment) => appointment.userId === userId
+      (appointment) => appointment.adminId === userId || appointment.clientId === userId
     );
   }
 
@@ -565,6 +578,8 @@ export class MemStorage implements IStorage {
     const newAppointment: Appointment = {
       ...appointment,
       id,
+      status: "pending",
+      notificationSent: false,
       createdAt: now,
       updatedAt: now,
     };

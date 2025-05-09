@@ -99,13 +99,17 @@ export const subscriptions = pgTable("subscriptions", {
 // Appointments Table
 export const appointments = pgTable("appointments", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  clientName: text("client_name").notNull(),
+  adminId: integer("admin_id").notNull().references(() => users.id),
+  clientId: integer("client_id").notNull().references(() => users.id),
   appointmentDate: timestamp("appointment_date").notNull(),
   duration: integer("duration").notNull(), // in minutes
   location: text("location").notNull(),
   details: text("details"),
-  status: text("status").default("pending").notNull(), // 'pending', 'confirmed', 'canceled'
+  amount: varchar("amount", { length: 50 }),
+  photoUrl: text("photo_url"),
+  status: text("status").default("pending").notNull(), // 'pending', 'approved', 'declined', 'canceled'
+  notificationSent: boolean("notification_sent").default(false),
+  notificationMethod: text("notification_method"), // 'email', 'sms', 'in-app', 'all'
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -215,7 +219,9 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
 export const insertAppointmentSchema = createInsertSchema(appointments).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  status: true,
+  notificationSent: true
 });
 
 export const insertMessageSchema = createInsertSchema(messages).omit({
