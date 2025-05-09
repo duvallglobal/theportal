@@ -13,6 +13,7 @@ import { Resend } from "resend";
 import { handleUpdateOnboardingStep } from "./routes/onboarding";
 import { WebSocketServer, WebSocket } from 'ws';
 import twilio from 'twilio';
+import { supabase } from './supabase';
 
 // Initialize Stripe if API key exists
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -1305,6 +1306,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Message API endpoints
+  app.get("/api/messages/:conversationId", validateSession, async (req, res) => {
+    try {
+      const { conversationId } = req.params;
+      
+      // Get messages for conversation
+      const messages = await storage.getMessagesByConversationId(parseInt(conversationId));
+      
+      // Check if user is part of this conversation
+      const isUserInConversation = await storage.isUserInConversation(req.user.id, parseInt(conversationId));
+      if (!isUserInConversation) {
+        return res.status(403).json({ message: "You are not authorized to view this conversation" });
+      }
+      
+      res.json(messages);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.post("/api/messages", validateSession, async (req, res) => {
+    try {
+      const { content, recipientId, conversationId } = req.body;
+      
+      // Create message in our database
+      const message = await storage.createMessage({
+        senderId: req.user.id,
+        recipientId: parseInt(recipientId),
+        conversationId: conversationId ? parseInt(conversationId) : null,
+        content,
+        isRead: false
+      });
+      
+      // If supabase is configured, insert the message there for real-time delivery
+      if (supabase) {
+        try {
+          const { error } = await supabase
+            .from('messages')
+            .insert([{
+              id: message.id.toString(),
+              sender_id: req.user.id,
+              recipient_id: recipientId,
+              conversation_id: conversationId || null,
+              content,
+              is_read: false
+            }]);
+            
+          if (error) {
+            console.error("Supabase message insert error:", error);
+          }
+        } catch (supabaseError) {
+          console.error("Supabase message insert exception:", supabaseError);
+        }
+      }
+      
+      // Create notification
+      const sender = await storage.getUser(req.user.id);
+      await storage.createNotification({
+        userId: parseInt(recipientId),
+        type: 'message',
+        content: `New message from ${sender?.username || 'a user'}`,
+        isRead: false,
+        linkUrl: `/messages/${conversationId || ''}`
+      });
+      
+      // Try to send SMS notification if recipient has a phone number
+      try {
+        const recipient = await storage.getUser(parseInt(recipientId));
+        if (recipient && recipient.phone) {
+          const smsMessage = `ManageTheFans: New message from ${sender?.username || 'a user'}. Check your portal for details.`;
+          await sendSmsNotification(recipient.phone, smsMessage);
+        }
+      } catch (smsError) {
+        console.error("SMS notification error:", smsError);
+      }
+      
+      res.status(201).json(message);
+    } catch (error) {
+      console.error("Create message error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  app.put("/api/messages/:messageId/read", validateSession, async (req, res) => {
+    try {
+      const { messageId } = req.params;
+      
+      // Get the message
+      const message = await storage.getMessage(parseInt(messageId));
+      if (!message) {
+        return res.status(404).json({ message: "Message not found" });
+      }
+      
+      // Ensure user is the recipient
+      if (message.recipientId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to mark this message as read" });
+      }
+      
+      // Mark as read in our database
+      await storage.markMessageAsRead(parseInt(messageId));
+      
+      // If supabase is configured, update the message there for real-time status
+      if (supabase) {
+        try {
+          const { error } = await supabase
+            .from('messages')
+            .update({ is_read: true })
+            .eq('id', messageId);
+            
+          if (error) {
+            console.error("Supabase message update error:", error);
+          }
+        } catch (supabaseError) {
+          console.error("Supabase message update exception:", supabaseError);
+        }
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Mark message as read error:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
   
