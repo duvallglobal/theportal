@@ -38,7 +38,11 @@ function RootRedirect() {
   useEffect(() => {
     if (!isLoading) {
       if (user) {
-        navigate('/dashboard');
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         navigate('/auth');
       }

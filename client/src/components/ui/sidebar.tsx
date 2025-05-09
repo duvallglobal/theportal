@@ -135,10 +135,8 @@ export function Sidebar({
   // Use the appropriate nav items based on user role
   const navItems = isAdmin ? adminNavItems : clientNavItems;
 
-  // Filter out admin-only items for non-admin users
-  const filteredNavItems = navItems.filter(
-    (item) => !item.adminOnly || (item.adminOnly && isAdmin)
-  );
+  // Using the appropriate nav items based on role - no filtering needed
+  const filteredNavItems = navItems;
 
   return (
     <div

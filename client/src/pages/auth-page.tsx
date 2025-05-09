@@ -33,10 +33,14 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<string>("login");
 
-  // Redirect if already logged in
+  // Redirect if already logged in based on user role
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      if (user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     }
   }, [user, navigate]);
 
@@ -62,8 +66,12 @@ export default function AuthPage() {
 
   const onLogin = async (data: LoginFormValues) => {
     loginMutation.mutate(data, {
-      onSuccess: () => {
-        navigate('/dashboard');
+      onSuccess: (user) => {
+        if (user.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       }
     });
   };
