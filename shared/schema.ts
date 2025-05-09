@@ -306,3 +306,13 @@ export type RentMenSettings = typeof rentMenSettings.$inferSelect;
 
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 export type Notification = typeof notifications.$inferSelect;
+
+export const insertAnalyticsSchema = createInsertSchema(analytics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  reportDate: true
+});
+
+export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
+export type Analytics = typeof analytics.$inferSelect;

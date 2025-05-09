@@ -11,7 +11,8 @@ import {
   conversations, Conversation, InsertConversation,
   conversationParticipants, 
   notifications, Notification, InsertNotification,
-  rentMenSettings, RentMenSettings, InsertRentMenSettings
+  rentMenSettings, RentMenSettings, InsertRentMenSettings,
+  analytics, Analytics, InsertAnalytics
 } from "@shared/schema";
 
 // Define storage interface with all necessary methods
@@ -93,6 +94,13 @@ export interface IStorage {
   getRentMenSettingsByUserId(userId: number): Promise<RentMenSettings | undefined>;
   createRentMenSettings(settings: InsertRentMenSettings): Promise<RentMenSettings>;
   updateRentMenSettings(id: number, settingsData: Partial<RentMenSettings>): Promise<RentMenSettings>;
+  
+  // Analytics methods
+  getAnalytics(id: number): Promise<Analytics | undefined>;
+  getAnalyticsByUserId(userId: number): Promise<Analytics[]>;
+  getLatestAnalyticsByUserId(userId: number): Promise<Analytics | undefined>;
+  createAnalytics(analytics: InsertAnalytics): Promise<Analytics>;
+  updateAnalytics(id: number, analyticsData: Partial<Analytics>): Promise<Analytics>;
 }
 
 // In-memory storage implementation
@@ -111,6 +119,8 @@ export class MemStorage implements IStorage {
   private notificationsMap: Map<number, Notification>;
   private rentMenSettingsMap: Map<number, RentMenSettings>;
   
+  private analyticsMap: Map<number, Analytics>;
+  
   private currentIds: {
     users: number;
     profiles: number;
@@ -125,6 +135,7 @@ export class MemStorage implements IStorage {
     conversationParticipants: number;
     notifications: number;
     rentMenSettings: number;
+    analytics: number;
   };
 
   constructor() {
@@ -141,6 +152,7 @@ export class MemStorage implements IStorage {
     this.conversationParticipantsMap = new Map();
     this.notificationsMap = new Map();
     this.rentMenSettingsMap = new Map();
+    this.analyticsMap = new Map();
     
     this.currentIds = {
       users: 1,
@@ -156,6 +168,7 @@ export class MemStorage implements IStorage {
       conversationParticipants: 1,
       notifications: 1,
       rentMenSettings: 1,
+      analytics: 1,
     };
 
     // Initialize with test users
