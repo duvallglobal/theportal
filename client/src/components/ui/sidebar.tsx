@@ -37,74 +37,103 @@ export function Sidebar({
 }: SidebarProps) {
   const [location] = useLocation();
 
-  const navItems = [
+  // Define admin navigation items
+  const adminNavItems = [
     {
-      name: "Dashboard",
-      path: isAdmin ? "/admin/dashboard" : "/dashboard",
+      name: "Admin Dashboard",
+      path: "/admin/dashboard",
       icon: <LayoutDashboard className="w-5 h-5 mr-3" />,
     },
     {
-      name: "Onboarding",
-      path: "/onboarding",
-      icon: <UserPlus className="w-5 h-5 mr-3" />,
-      adminOnly: false,
+      name: "User Management",
+      path: "/admin",
+      icon: <Users className="w-5 h-5 mr-3" />,
     },
     {
-      name: "Profile & Access",
-      path: "/profile",
-      icon: <User className="w-5 h-5 mr-3" />,
-      adminOnly: false,
-    },
-    {
-      name: "Brand & Strategy",
-      path: "/brand-strategy",
-      icon: <Target className="w-5 h-5 mr-3" />,
-      adminOnly: false,
-    },
-    {
-      name: "Content Upload",
-      path: "/content-upload",
-      icon: <Upload className="w-5 h-5 mr-3" />,
-      adminOnly: false,
-    },
-    {
-      name: "Billing",
-      path: "/billing",
-      icon: <CreditCard className="w-5 h-5 mr-3" />,
-      adminOnly: false,
-    },
-    {
-      name: "Appointments",
-      path: "/appointments",
+      name: "Appointment Manager",
+      path: "/admin/appointments",
       icon: <Calendar className="w-5 h-5 mr-3" />,
-      adminOnly: false,
+    },
+    {
+      name: "Content Approval",
+      path: "/admin/content",
+      icon: <Upload className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Verification Queue",
+      path: "/admin/verifications",
+      icon: <User className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Billing Management",
+      path: "/admin/billing",
+      icon: <CreditCard className="w-5 h-5 mr-3" />,
     },
     {
       name: "Messaging",
       path: "/messages",
       icon: <MessageSquare className="w-5 h-5 mr-3" />,
       badge: 3,
-      adminOnly: false,
+    },
+  ];
+
+  // Define client navigation items
+  const clientNavItems = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <LayoutDashboard className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Onboarding",
+      path: "/onboarding",
+      icon: <UserPlus className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Profile & Access",
+      path: "/profile",
+      icon: <User className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Brand & Strategy",
+      path: "/brand-strategy",
+      icon: <Target className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Content Upload",
+      path: "/content-upload",
+      icon: <Upload className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Billing",
+      path: "/billing",
+      icon: <CreditCard className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Appointments",
+      path: "/appointments",
+      icon: <Calendar className="w-5 h-5 mr-3" />,
+    },
+    {
+      name: "Messaging",
+      path: "/messages",
+      icon: <MessageSquare className="w-5 h-5 mr-3" />,
+      badge: 3,
     },
     {
       name: "Rent.Men Concierge",
       path: "/rent-men",
       icon: <Bell className="w-5 h-5 mr-3" />,
-      adminOnly: false,
     },
     {
       name: "Analytics",
       path: "/analytics",
       icon: <LineChart className="w-5 h-5 mr-3" />,
-      adminOnly: false,
-    },
-    {
-      name: "Client Management",
-      path: "/admin/clients",
-      icon: <Users className="w-5 h-5 mr-3" />,
-      adminOnly: true,
     },
   ];
+
+  // Use the appropriate nav items based on user role
+  const navItems = isAdmin ? adminNavItems : clientNavItems;
 
   // Filter out admin-only items for non-admin users
   const filteredNavItems = navItems.filter(

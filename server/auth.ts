@@ -66,11 +66,11 @@ export function setupAuth(app: Express) {
   // Configure session
   const sessionOptions: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "mtf-secret-key",
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Changed to true to ensure session is saved on each request
+    saveUninitialized: true, // Changed to true to save new but unmodified sessions
     cookie: {
       secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 7 * 24 * 60 * 60 * 1000, // Extended to 7 days
       httpOnly: true,
       sameSite: 'lax'
     },
