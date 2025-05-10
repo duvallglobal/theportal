@@ -203,11 +203,7 @@ function Router() {
         </SidebarLayout>
       )} />
       
-      <AdminRoute path="/admin/users/:id" component={() => (
-        <SidebarLayout>
-          <UserDetails />
-        </SidebarLayout>
-      )} />
+      {/* Removed duplicate "/admin/users/:id" route, using "/admin/clients/:id" instead */}
       
       <AdminRoute path="/admin/appointments" component={() => (
         <SidebarLayout>

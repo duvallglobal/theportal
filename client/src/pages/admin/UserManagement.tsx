@@ -312,7 +312,7 @@ export default function UserManagement() {
                       <TableCell>{formatDate(user.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Link href={`/admin/users/${user.id}`}>
+                          <Link href={`/admin/clients/${user.id}`}>
                             <Button size="sm" variant="outline">
                               Details
                             </Button>
