@@ -1519,80 +1519,222 @@ export class PgStorage implements IStorage {
   
   // Message methods
   async getMessage(id: number): Promise<Message | undefined> {
-    console.warn('Using fallback for getMessage');
-    return this.memStorage.getMessage(id);
+    try {
+      const result = await this.db.select().from(messages).where(eq(messages.id, id));
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error getting message:', error);
+      return this.memStorage.getMessage(id);
+    }
   }
   
   async getMessagesByConversationId(conversationId: number): Promise<Message[]> {
-    console.warn('Using fallback for getMessagesByConversationId');
-    return this.memStorage.getMessagesByConversationId(conversationId);
+    try {
+      const result = await this.db.select()
+        .from(messages)
+        .where(eq(messages.conversationId, conversationId))
+        .orderBy(messages.createdAt);
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting messages by conversation ID:', error);
+      return this.memStorage.getMessagesByConversationId(conversationId);
+    }
   }
   
   async createMessage(message: InsertMessage): Promise<Message> {
-    console.warn('Using fallback for createMessage');
-    return this.memStorage.createMessage(message);
+    try {
+      const result = await this.db.insert(messages)
+        .values({
+          ...message,
+          createdAt: new Date(),
+          readAt: null
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating message:', error);
+      return this.memStorage.createMessage(message);
+    }
   }
   
   async markMessageAsRead(id: number): Promise<void> {
-    console.warn('Using fallback for markMessageAsRead');
-    return this.memStorage.markMessageAsRead(id);
+    try {
+      await this.db.update(messages)
+        .set({ readAt: new Date() })
+        .where(eq(messages.id, id));
+    } catch (error) {
+      console.error('Error marking message as read:', error);
+      return this.memStorage.markMessageAsRead(id);
+    }
   }
   
   async getMessagesByUser(userId: number): Promise<Message[]> {
-    console.warn('Using fallback for getMessagesByUser');
-    return this.memStorage.getMessagesByUser(userId);
+    try {
+      const result = await this.db.select()
+        .from(messages)
+        .where(eq(messages.senderId, userId));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting messages by user ID:', error);
+      return this.memStorage.getMessagesByUser(userId);
+    }
   }
   
   // Conversation methods
   async getConversation(id: number): Promise<Conversation | undefined> {
-    console.warn('Using fallback for getConversation');
-    return this.memStorage.getConversation(id);
+    try {
+      const result = await this.db.select().from(conversations).where(eq(conversations.id, id));
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error getting conversation:', error);
+      return this.memStorage.getConversation(id);
+    }
   }
   
   async getConversationsByUserId(userId: number): Promise<Conversation[]> {
-    console.warn('Using fallback for getConversationsByUserId');
-    return this.memStorage.getConversationsByUserId(userId);
+    try {
+      // First, find all conversationIds the user is part of
+      const participantResults = await this.db.select()
+        .from(conversationParticipants)
+        .where(eq(conversationParticipants.userId, userId));
+      
+      if (participantResults.length === 0) {
+        return [];
+      }
+      
+      // Get all conversations matching these IDs
+      const conversationIds = participantResults.map(p => p.conversationId);
+      const result = await this.db.select()
+        .from(conversations)
+        .where(inArray(conversations.id, conversationIds));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting conversations by user ID:', error);
+      return this.memStorage.getConversationsByUserId(userId);
+    }
   }
   
   async createConversation(conversation: InsertConversation): Promise<Conversation> {
-    console.warn('Using fallback for createConversation');
-    return this.memStorage.createConversation(conversation);
+    try {
+      const result = await this.db.insert(conversations)
+        .values({
+          ...conversation,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      return this.memStorage.createConversation(conversation);
+    }
   }
   
   async updateConversation(id: number, conversationData: Partial<Conversation>): Promise<Conversation> {
-    console.warn('Using fallback for updateConversation');
-    return this.memStorage.updateConversation(id, conversationData);
+    try {
+      const result = await this.db.update(conversations)
+        .set({ ...conversationData, updatedAt: new Date() })
+        .where(eq(conversations.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Conversation with ID ${id} not found`);
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating conversation:', error);
+      return this.memStorage.updateConversation(id, conversationData);
+    }
   }
   
   async addUserToConversation(conversationId: number, userId: number): Promise<void> {
-    console.warn('Using fallback for addUserToConversation');
-    return this.memStorage.addUserToConversation(conversationId, userId);
+    try {
+      await this.db.insert(conversationParticipants)
+        .values({
+          conversationId,
+          userId
+        });
+    } catch (error) {
+      console.error('Error adding user to conversation:', error);
+      return this.memStorage.addUserToConversation(conversationId, userId);
+    }
   }
   
   async isUserInConversation(userId: number, conversationId: number): Promise<boolean> {
-    console.warn('Using fallback for isUserInConversation');
-    return this.memStorage.isUserInConversation(userId, conversationId);
+    try {
+      const result = await this.db.select()
+        .from(conversationParticipants)
+        .where(
+          and(
+            eq(conversationParticipants.userId, userId),
+            eq(conversationParticipants.conversationId, conversationId)
+          )
+        );
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error checking if user is in conversation:', error);
+      return this.memStorage.isUserInConversation(userId, conversationId);
+    }
   }
   
   // Notification methods
   async getNotification(id: number): Promise<Notification | undefined> {
-    console.warn('Using fallback for getNotification');
-    return this.memStorage.getNotification(id);
+    try {
+      const result = await this.db.select().from(notifications).where(eq(notifications.id, id));
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error getting notification:', error);
+      return this.memStorage.getNotification(id);
+    }
   }
   
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
-    console.warn('Using fallback for getNotificationsByUserId');
-    return this.memStorage.getNotificationsByUserId(userId);
+    try {
+      const result = await this.db.select()
+        .from(notifications)
+        .where(eq(notifications.userId, userId))
+        .orderBy(desc(notifications.createdAt));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting notifications by user ID:', error);
+      return this.memStorage.getNotificationsByUserId(userId);
+    }
   }
   
   async createNotification(notification: InsertNotification): Promise<Notification> {
-    console.warn('Using fallback for createNotification');
-    return this.memStorage.createNotification(notification);
+    try {
+      const result = await this.db.insert(notifications)
+        .values({
+          ...notification,
+          isRead: false,
+          createdAt: new Date()
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating notification:', error);
+      return this.memStorage.createNotification(notification);
+    }
   }
   
   async markNotificationAsRead(id: number): Promise<void> {
-    console.warn('Using fallback for markNotificationAsRead');
-    return this.memStorage.markNotificationAsRead(id);
+    try {
+      await this.db.update(notifications)
+        .set({ isRead: true })
+        .where(eq(notifications.id, id));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return this.memStorage.markNotificationAsRead(id);
+    }
   }
   
   // RentMen settings methods
