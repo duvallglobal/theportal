@@ -10,7 +10,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { Resend } from "resend";
-import { handleUpdateOnboardingStep } from "./routes/onboarding";
+import { handleUpdateOnboardingStep, getOnboardingProgress } from "./routes/onboarding";
 import adminRoutes from './routes/admin';
 import appointmentsRoutes from './routes/appointments';
 import { WebSocketServer, WebSocket } from 'ws';
@@ -668,18 +668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/onboarding/progress", validateSession, async (req, res) => {
-    try {
-      const user = await storage.getUser(req.user.id);
-      res.json({
-        currentStep: user.onboardingStep,
-        status: user.onboardingStatus
-      });
-    } catch (error) {
-      console.error("Get onboarding progress error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
+  app.get("/api/onboarding/progress", validateSession, getOnboardingProgress);
 
   // Content upload and management routes
   app.post("/api/content/upload", validateSession, upload.array("files"), async (req, res) => {

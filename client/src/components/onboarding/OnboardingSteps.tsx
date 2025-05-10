@@ -117,21 +117,29 @@ export function OnboardingSteps() {
         const response = await apiRequest('GET', '/api/onboarding/progress');
         const data = await response.json();
         
-        if (data && data.currentStep) {
-          setCurrentStep(data.currentStep);
+        if (data) {
+          // Set current step from the API response
+          if (data.currentStep) {
+            setCurrentStep(data.currentStep);
+          }
           
-          // Update steps status based on current progress
-          const updatedSteps = DEFAULT_STEPS.map(step => {
-            if (step.id < data.currentStep) {
-              return { ...step, status: 'completed' };
-            } else if (step.id === data.currentStep) {
-              return { ...step, status: 'current' };
-            } else {
-              return { ...step, status: 'pending' };
-            }
-          });
-          
-          setOnboardingSteps(updatedSteps);
+          // If the API provides steps with status, use them directly
+          if (data.steps && Array.isArray(data.steps) && data.steps.length > 0) {
+            setOnboardingSteps(data.steps);
+          } else {
+            // Fallback to local calculation if API doesn't provide formatted steps
+            const updatedSteps = DEFAULT_STEPS.map(step => {
+              if (step.id < data.currentStep) {
+                return { ...step, status: 'completed' };
+              } else if (step.id === data.currentStep) {
+                return { ...step, status: 'current' };
+              } else {
+                return { ...step, status: 'pending' };
+              }
+            });
+            
+            setOnboardingSteps(updatedSteps);
+          }
         }
       } catch (error) {
         console.error('Error fetching onboarding progress:', error);
