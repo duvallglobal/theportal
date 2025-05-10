@@ -54,8 +54,15 @@ const accountAccessSchema = z.object({
   onlyFansPassword: z.string().optional(),
   needsOnlyFansCreation: z.boolean().optional(),
   instagramUsername: z.string().optional(),
+  needsInstagramCreation: z.boolean().optional(),
   tiktokUsername: z.string().optional(),
+  needsTiktokCreation: z.boolean().optional(),
   twitterUsername: z.string().optional(),
+  needsTwitterCreation: z.boolean().optional(),
+  snapchatUsername: z.string().optional(),
+  needsSnapchatCreation: z.boolean().optional(),
+  redditUsername: z.string().optional(),
+  needsRedditCreation: z.boolean().optional(),
   preferredHandles: z.string().optional(),
 });
 
@@ -390,57 +397,188 @@ export function OnboardingSteps() {
           <div className="pt-4">
             <h3 className="text-lg font-medium text-white mb-4">Other Social Media Platforms</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="instagramUsername"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Instagram Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Your Instagram username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="instagramUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Instagram Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your Instagram username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="needsInstagramCreation"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange} 
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>I need help creating an Instagram account</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
               
-              <FormField
-                control={form.control}
-                name="tiktokUsername"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>TikTok Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Your TikTok username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="tiktokUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>TikTok Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your TikTok username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="needsTiktokCreation"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange} 
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>I need help creating a TikTok account</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
               
-              <FormField
-                control={form.control}
-                name="twitterUsername"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Twitter Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Your Twitter username" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="twitterUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Twitter Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your Twitter username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="needsTwitterCreation"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange} 
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>I need help creating a Twitter account</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="snapchatUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Snapchat Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your Snapchat username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="needsSnapchatCreation"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange} 
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>I need help creating a Snapchat account</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="redditUsername"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reddit Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your Reddit username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="needsRedditCreation"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox 
+                          checked={field.value} 
+                          onCheckedChange={field.onChange} 
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>I need help creating a Reddit account</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <FormField
                 control={form.control}
                 name="preferredHandles"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="md:col-span-2">
                     <FormLabel>Preferred Social Media Handles</FormLabel>
                     <FormControl>
-                      <Input placeholder="Handles you'd like to use" {...field} />
+                      <Input placeholder="Handles you'd like to use across platforms" {...field} />
                     </FormControl>
+                    <FormDescription className="text-gray-400">
+                      If you need new accounts, let us know what usernames you'd prefer
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
