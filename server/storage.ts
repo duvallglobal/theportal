@@ -1047,7 +1047,7 @@ export class MemStorage implements IStorage {
 }
 
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, and, or, desc } from 'drizzle-orm';
+import { eq, and, or, desc, inArray, isNull, like, not, notInArray, sql } from 'drizzle-orm';
 import db from './db';
 
 // PostgreSQL storage implementation
@@ -1786,43 +1786,116 @@ export class PgStorage implements IStorage {
   
   // Communication Template methods
   async getCommunicationTemplate(id: number): Promise<CommunicationTemplate | undefined> {
-    console.warn('Using fallback for getCommunicationTemplate');
-    return this.memStorage.getCommunicationTemplate(id);
+    try {
+      const result = await this.db.select()
+        .from(communicationTemplates)
+        .where(eq(communicationTemplates.id, id));
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error getting communication template:', error);
+      return this.memStorage.getCommunicationTemplate(id);
+    }
   }
   
   async getCommunicationTemplatesByType(type: string): Promise<CommunicationTemplate[]> {
-    console.warn('Using fallback for getCommunicationTemplatesByType');
-    return this.memStorage.getCommunicationTemplatesByType(type);
+    try {
+      const result = await this.db.select()
+        .from(communicationTemplates)
+        .where(eq(communicationTemplates.type, type));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting communication templates by type:', error);
+      return this.memStorage.getCommunicationTemplatesByType(type);
+    }
   }
   
   async getCommunicationTemplatesByCategory(category: string): Promise<CommunicationTemplate[]> {
-    console.warn('Using fallback for getCommunicationTemplatesByCategory');
-    return this.memStorage.getCommunicationTemplatesByCategory(category);
+    try {
+      const result = await this.db.select()
+        .from(communicationTemplates)
+        .where(eq(communicationTemplates.category, category));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting communication templates by category:', error);
+      return this.memStorage.getCommunicationTemplatesByCategory(category);
+    }
   }
   
   async getDefaultCommunicationTemplate(type: string, category: string): Promise<CommunicationTemplate | undefined> {
-    console.warn('Using fallback for getDefaultCommunicationTemplate');
-    return this.memStorage.getDefaultCommunicationTemplate(type, category);
+    try {
+      const result = await this.db.select()
+        .from(communicationTemplates)
+        .where(
+          and(
+            eq(communicationTemplates.type, type),
+            eq(communicationTemplates.category, category),
+            eq(communicationTemplates.isDefault, true)
+          )
+        );
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error getting default communication template:', error);
+      return this.memStorage.getDefaultCommunicationTemplate(type, category);
+    }
   }
   
   async createCommunicationTemplate(template: InsertCommunicationTemplate): Promise<CommunicationTemplate> {
-    console.warn('Using fallback for createCommunicationTemplate');
-    return this.memStorage.createCommunicationTemplate(template);
+    try {
+      const result = await this.db.insert(communicationTemplates)
+        .values({
+          ...template,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating communication template:', error);
+      return this.memStorage.createCommunicationTemplate(template);
+    }
   }
   
   async updateCommunicationTemplate(id: number, templateData: Partial<CommunicationTemplate>): Promise<CommunicationTemplate> {
-    console.warn('Using fallback for updateCommunicationTemplate');
-    return this.memStorage.updateCommunicationTemplate(id, templateData);
+    try {
+      const result = await this.db.update(communicationTemplates)
+        .set({ ...templateData, updatedAt: new Date() })
+        .where(eq(communicationTemplates.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Communication template with ID ${id} not found`);
+      }
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error updating communication template:', error);
+      return this.memStorage.updateCommunicationTemplate(id, templateData);
+    }
   }
   
   async deleteCommunicationTemplate(id: number): Promise<void> {
-    console.warn('Using fallback for deleteCommunicationTemplate');
-    return this.memStorage.deleteCommunicationTemplate(id);
+    try {
+      await this.db.delete(communicationTemplates)
+        .where(eq(communicationTemplates.id, id));
+    } catch (error) {
+      console.error('Error deleting communication template:', error);
+      return this.memStorage.deleteCommunicationTemplate(id);
+    }
   }
   
   async getAllCommunicationTemplates(): Promise<CommunicationTemplate[]> {
-    console.warn('Using fallback for getAllCommunicationTemplates');
-    return this.memStorage.getAllCommunicationTemplates();
+    try {
+      const result = await this.db.select().from(communicationTemplates);
+      return result;
+    } catch (error) {
+      console.error('Error getting all communication templates:', error);
+      return this.memStorage.getAllCommunicationTemplates();
+    }
   }
   
   // Communication History methods
