@@ -65,10 +65,120 @@ export const getOnboardingProgress = async (req: Request, res: Response) => {
       }
     });
 
+    // Get form data for current step to prefill the form
+    let formData: any = {};
+    
+    // Fetch data based on the current step
+    try {
+      // Get user profile data
+      const profile = await storage.getProfileByUserId(req.user.id);
+      
+      // Step 1: Identity data
+      if (currentStep >= 1) {
+        formData = {
+          ...formData,
+          fullName: user.fullName || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          dateOfBirth: profile?.birthDate || '',
+        };
+      }
+      
+      // Step 2: Account Access data
+      if (currentStep >= 2) {
+        // Get platform accounts
+        const platformAccounts = await storage.getPlatformAccountsByUserId(req.user.id);
+        
+        // Extract OnlyFans account
+        const onlyFansAccount = platformAccounts.find(acc => acc.platformType === 'OnlyFans');
+        formData.onlyFansUsername = onlyFansAccount?.username || '';
+        formData.onlyFansPassword = ''; // Don't send back password for security
+        formData.needsOnlyFansCreation = !!onlyFansAccount?.needsCreation;
+        
+        // Extract Instagram account
+        const instagramAccount = platformAccounts.find(acc => acc.platformType === 'Instagram');
+        formData.instagramUsername = instagramAccount?.username || '';
+        formData.needsInstagramCreation = !!instagramAccount?.needsCreation;
+        
+        // Extract TikTok account
+        const tiktokAccount = platformAccounts.find(acc => acc.platformType === 'TikTok');
+        formData.tiktokUsername = tiktokAccount?.username || '';
+        formData.needsTiktokCreation = !!tiktokAccount?.needsCreation;
+        
+        // Extract Twitter account
+        const twitterAccount = platformAccounts.find(acc => acc.platformType === 'Twitter');
+        formData.twitterUsername = twitterAccount?.username || '';
+        formData.needsTwitterCreation = !!twitterAccount?.needsCreation;
+        
+        // Extract Snapchat account
+        const snapchatAccount = platformAccounts.find(acc => acc.platformType === 'Snapchat');
+        formData.snapchatUsername = snapchatAccount?.username || '';
+        formData.needsSnapchatCreation = !!snapchatAccount?.needsCreation;
+        
+        // Extract Reddit account
+        const redditAccount = platformAccounts.find(acc => acc.platformType === 'Reddit');
+        formData.redditUsername = redditAccount?.username || '';
+        formData.needsRedditCreation = !!redditAccount?.needsCreation;
+        
+        // Add preferred handles
+        formData.preferredHandles = profile?.preferredHandles || '';
+      }
+      
+      // Step 3: Brand Strategy data
+      if (currentStep >= 3) {
+        formData.brandDescription = profile?.brandDescription || '';
+        formData.voiceTone = profile?.voiceTone || '';
+        formData.doNotSayTerms = profile?.doNotSayTerms || '';
+        
+        // Get content strategy data
+        const contentStrategy = await storage.getContentStrategyByUserId(req.user.id);
+        if (contentStrategy) {
+          try {
+            // Parse JSON arrays if they exist
+            formData.growthGoals = contentStrategy.growthGoals 
+              ? JSON.parse(contentStrategy.growthGoals.toString())
+              : [];
+            formData.contentTypes = contentStrategy.contentTypes
+              ? JSON.parse(contentStrategy.contentTypes.toString())
+              : [];
+          } catch (err) {
+            console.error("Error parsing JSON from content strategy:", err);
+            formData.growthGoals = [];
+            formData.contentTypes = [];
+          }
+        }
+      }
+      
+      // Step 4: Communication data
+      if (currentStep >= 4) {
+        formData.bestContactMethod = profile?.preferredContactMethod || '';
+        formData.preferredCheckInTime = profile?.preferredCheckInTime || '';
+        formData.timezone = profile?.timezone || '';
+        // Note: notificationPreferences would come from a different table
+        formData.notificationPreferences = [];
+      }
+      
+      // Step 5: Content Strategy data 
+      if (currentStep >= 5) {
+        formData.uploadFrequency = profile?.uploadFrequency || '';
+        
+        // Get content strategy for existing content
+        const contentStrategy = await storage.getContentStrategyByUserId(req.user.id);
+        if (contentStrategy) {
+          formData.existingContent = contentStrategy.existingContent || '';
+        }
+      }
+      
+    } catch (err) {
+      console.error("Error fetching form data:", err);
+      // Continue without form data if there's an error
+    }
+
     res.json({
       currentStep,
       status: user.onboardingStatus,
-      steps
+      steps,
+      formData
     });
   } catch (error) {
     console.error("Get onboarding progress error:", error);
