@@ -27,7 +27,7 @@ import ContentViewer from "./pages/admin/ContentViewer";
 import VerificationQueue from "./pages/admin/VerificationQueue";
 import BillingManagement from "./pages/admin/BillingManagement";
 import AdminMessaging from "./pages/admin/Messaging";
-import ClientManagement from "./pages/admin/client-management";
+import ClientManagement from "./pages/admin/ClientManagement";
 import TemplateManagement from "./pages/admin/TemplateManagement";
 import CommunicationHistory from "./pages/admin/CommunicationHistory";
 import SendCommunication from "./pages/admin/SendCommunication";

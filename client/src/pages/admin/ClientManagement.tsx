@@ -57,7 +57,7 @@ interface ClientType {
   createdAt: string;
 }
 
-export default function UserManagement() {
+export default function ClientManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
