@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { UpdatePaymentModal } from "@/components/billing/UpdatePaymentModal";
 import {
   CreditCard,
   Check,
@@ -99,6 +100,7 @@ const plans = [
 
 export default function Billing() {
   const [updatingPayment, setUpdatingPayment] = useState(false);
+  const [updatePaymentModalOpen, setUpdatePaymentModalOpen] = useState(false);
   const { toast } = useToast();
 
   // Fetch real subscription data from API

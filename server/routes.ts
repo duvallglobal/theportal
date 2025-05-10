@@ -879,6 +879,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ message: "Error creating payment intent: " + error.message });
       }
     });
+    
+    // API endpoint to create a setup intent for updating payment method
+    app.post('/api/create-setup-intent', validateSession, async (req, res) => {
+      try {
+        const userId = req.user.id;
+        const user = await storage.getUser(userId);
+        
+        // Check if user has a Stripe customer ID
+        let customerId = user.stripeCustomerId;
+        
+        // If user doesn't have a Stripe customer ID, create one
+        if (!customerId) {
+          const customer = await stripe.customers.create({
+            email: user.email,
+            name: user.fullName || user.username,
+            metadata: {
+              userId: userId.toString()
+            }
+          });
+          
+          customerId = customer.id;
+          
+          // Update the user record with the Stripe customer ID
+          await storage.updateUser(userId, {
+            stripeCustomerId: customer.id
+          });
+        }
+        
+        // Create a SetupIntent
+        const setupIntent = await stripe.setupIntents.create({
+          customer: customerId,
+          payment_method_types: ['card'],
+        });
+        
+        res.json({
+          clientSecret: setupIntent.client_secret
+        });
+      } catch (error: any) {
+        console.error("Error creating setup intent:", error);
+        res.status(500).json({ 
+          message: "Error creating setup intent: " + error.message 
+        });
+      }
+    });
+    
+    // API endpoint to update a payment method
+    app.post('/api/update-payment-method', validateSession, async (req, res) => {
+      try {
+        const userId = req.user.id;
+        const { paymentMethodId } = req.body;
+        
+        // Get the user's customer ID
+        const user = await storage.getUser(userId);
+        const customerId = user.stripeCustomerId;
+        
+        if (!customerId) {
+          return res.status(400).json({ 
+            message: "User does not have a Stripe customer ID" 
+          });
+        }
+        
+        // Get the user's subscription
+        const subscription = await storage.getSubscriptionByUserId(userId);
+        
+        // If the user has an active subscription, update the payment method
+        if (subscription?.stripeSubscriptionId) {
+          await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+            default_payment_method: paymentMethodId
+          });
+        }
+        
+        // Set the payment method as the default for the customer
+        await stripe.customers.update(customerId, {
+          invoice_settings: {
+            default_payment_method: paymentMethodId
+          }
+        });
+        
+        res.json({ 
+          success: true,
+          message: "Payment method updated successfully" 
+        });
+      } catch (error: any) {
+        console.error("Error updating payment method:", error);
+        res.status(500).json({ 
+          message: "Error updating payment method: " + error.message 
+        });
+      }
+    });
 
     app.post('/api/create-subscription', validateSession, async (req, res) => {
       try {
