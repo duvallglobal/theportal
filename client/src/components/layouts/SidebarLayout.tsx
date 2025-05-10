@@ -68,10 +68,11 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
+      {/* Fixed Sidebar */}
       <Sidebar
         id="sidebar"
         isOpen={isSidebarOpen}
-        className={`fixed lg:relative z-30 transform ${
+        className={`fixed top-0 left-0 h-screen z-30 transform ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0 transition-transform duration-300 ease-in-out`}
         onClose={() => setIsSidebarOpen(false)}
@@ -79,10 +80,10 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
         isAdmin={isAdmin}
       />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col lg:ml-64 w-full">
-        {/* Header */}
-        <header className="bg-background z-10 border-b">
+      {/* Main Content - Offset to accommodate fixed sidebar */}
+      <div className="flex-1 flex flex-col w-full lg:ml-64">
+        {/* Fixed Header */}
+        <header className="bg-background z-20 border-b sticky top-0 left-0 right-0">
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-4">
               <button
@@ -115,7 +116,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-9 w-9 rounded-full" aria-label="User menu">
                       <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                        {user.fullName.split(' ').map(name => name[0]).join('').toUpperCase()}
+                        {user?.fullName ? user.fullName.split(' ').map(name => name[0]).join('').toUpperCase() : 'U'}
                       </div>
                     </Button>
                   </DropdownMenuTrigger>
@@ -143,8 +144,8 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 overflow-auto bg-background">{children}</main>
+        {/* Page Content - Scrollable */}
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-background">{children}</main>
       </div>
     </div>
   );

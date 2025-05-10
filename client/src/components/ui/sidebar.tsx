@@ -168,19 +168,24 @@ export function Sidebar({
   return (
     <div
       id={id}
-      className={`w-64 h-full flex flex-col bg-gray-900 text-white shadow-lg ${className}`}
+      className={`w-64 h-screen flex flex-col bg-gray-900 text-white shadow-lg ${className}`}
     >
-      <div className="flex-grow overflow-y-auto">
+      {/* Fixed header section */}
+      <div className="p-4 border-b border-gray-800">
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-xl font-semibold text-white">ManageTheFans</h1>
+          <button
+            onClick={onClose}
+            className="lg:hidden text-gray-400 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+      
+      {/* Scrollable navigation section */}
+      <div className="flex-grow overflow-y-auto custom-scrollbar">
         <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-xl font-semibold text-white">ManageTheFans</h1>
-            <button
-              onClick={onClose}
-              className="lg:hidden text-gray-400 hover:text-white"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
           <nav>
             <ul className="space-y-1">
               {filteredNavItems.map((item) => (
