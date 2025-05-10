@@ -105,7 +105,48 @@ export function OnboardingSteps() {
   const [idFrontFile, setIdFrontFile] = useState<File | null>(null);
   const [idBackFile, setIdBackFile] = useState<File | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const [onboardingSteps, setOnboardingSteps] = useState(DEFAULT_STEPS);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Fetch the user's current onboarding progress
+  useEffect(() => {
+    const fetchOnboardingProgress = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiRequest('GET', '/api/onboarding/progress');
+        const data = await response.json();
+        
+        if (data && data.currentStep) {
+          setCurrentStep(data.currentStep);
+          
+          // Update steps status based on current progress
+          const updatedSteps = DEFAULT_STEPS.map(step => {
+            if (step.id < data.currentStep) {
+              return { ...step, status: 'completed' };
+            } else if (step.id === data.currentStep) {
+              return { ...step, status: 'current' };
+            } else {
+              return { ...step, status: 'pending' };
+            }
+          });
+          
+          setOnboardingSteps(updatedSteps);
+        }
+      } catch (error) {
+        console.error('Error fetching onboarding progress:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load your onboarding progress.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchOnboardingProgress();
+  }, [toast]);
 
   // Get the appropriate schema for the current step
   const getSchemaForStep = (step: number) => {
@@ -153,10 +194,33 @@ export function OnboardingSteps() {
       });
 
       // Move to next step if not at the end
-      if (currentStep < ONBOARDING_STEPS.length) {
-        setCurrentStep(currentStep + 1);
+      if (currentStep < onboardingSteps.length) {
+        const nextStep = currentStep + 1;
+        
+        // Update current step
+        setCurrentStep(nextStep);
+        
+        // Update steps status
+        const updatedSteps = onboardingSteps.map(step => {
+          if (step.id < nextStep) {
+            return { ...step, status: 'completed' };
+          } else if (step.id === nextStep) {
+            return { ...step, status: 'current' };
+          } else {
+            return { ...step, status: 'pending' };
+          }
+        });
+        
+        setOnboardingSteps(updatedSteps);
+        
+        // Also update on server
+        await apiRequest('POST', `/api/onboarding/tooltip/${nextStep}`, {});
+        
+        // Invalidate the user data cache to reflect updated onboarding status
+        queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
       }
     } catch (error) {
+      console.error('Onboarding step save error:', error);
       toast({
         title: "Error",
         description: "There was a problem saving your information.",
@@ -959,55 +1023,67 @@ export function OnboardingSteps() {
         </Button>
       </div>
 
-      {/* Progress Indicator */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-400">Progress</span>
-          <span className="text-sm text-white font-medium">
-            {ONBOARDING_STEPS.filter(step => step.status === 'completed').length} of {ONBOARDING_STEPS.length} completed
-          </span>
+      {/* Loading indicator */}
+      {isLoading ? (
+        <div className="flex justify-center items-center my-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-white">Loading your progress...</span>
         </div>
-        <div className="w-full h-2 bg-background-lighter rounded-full">
-          <div 
-            className="h-2 bg-primary rounded-full" 
-            style={{ 
-              width: `${(ONBOARDING_STEPS.filter(step => step.status === 'completed').length / ONBOARDING_STEPS.length) * 100}%` 
-            }}
-          ></div>
-        </div>
-      </div>
+      ) : (
+        <>
+          {/* Progress Indicator */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-gray-400">Progress</span>
+              <span className="text-sm text-white font-medium">
+                {onboardingSteps.filter(step => step.status === 'completed').length} of {onboardingSteps.length} completed
+              </span>
+            </div>
+            <div className="w-full h-2 bg-background-lighter rounded-full">
+              <div 
+                className="h-2 bg-primary rounded-full" 
+                style={{ 
+                  width: `${(onboardingSteps.filter(step => step.status === 'completed').length / onboardingSteps.length) * 100}%` 
+                }}
+              ></div>
+            </div>
+          </div>
 
-      {/* Step Navigation */}
-      <div className="flex flex-wrap gap-3 mb-8">
-        {ONBOARDING_STEPS.map((step) => (
-          <StepIndicator 
-            key={step.id}
-            step={step.id}
-            title={step.title}
-            status={step.status as 'completed' | 'current' | 'pending'}
-            onClick={() => {
-              // Only allow navigation to completed steps or current step
-              if (step.status !== 'pending') {
-                setCurrentStep(step.id);
-              }
-            }}
-          />
-        ))}
-      </div>
+          {/* Step Navigation */}
+          <div className="flex flex-wrap gap-3 mb-8">
+            {onboardingSteps.map((step) => (
+              <StepIndicator 
+                key={step.id}
+                step={step.id}
+                title={step.title}
+                status={step.status as 'completed' | 'current' | 'pending'}
+                onClick={() => {
+                  // Only allow navigation to completed steps or current step
+                  if (step.status !== 'pending') {
+                    setCurrentStep(step.id);
+                  }
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {/* Current Step Content */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
-          {currentStep === 1 && renderIdentityStep()}
-          {currentStep === 2 && renderAccountAccessStep()}
-          {currentStep === 3 && renderBrandStrategyStep()}
-          {currentStep === 4 && renderCommunicationStep()}
-          {currentStep === 5 && renderContentStrategyStep()}
-          {currentStep === 6 && renderVerificationStep()}
-          {currentStep === 7 && renderConciergeStep()}
-          {currentStep === 8 && renderLegalStep()}
-        </form>
-      </Form>
+      {!isLoading && (
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            {currentStep === 1 && renderIdentityStep()}
+            {currentStep === 2 && renderAccountAccessStep()}
+            {currentStep === 3 && renderBrandStrategyStep()}
+            {currentStep === 4 && renderCommunicationStep()}
+            {currentStep === 5 && renderContentStrategyStep()}
+            {currentStep === 6 && renderVerificationStep()}
+            {currentStep === 7 && renderConciergeStep()}
+            {currentStep === 8 && renderLegalStep()}
+          </form>
+        </Form>
+      )}
     </>
   );
 }
