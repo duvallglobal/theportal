@@ -1744,8 +1744,37 @@ export class PgStorage implements IStorage {
   // Notification methods
   async getNotification(id: number): Promise<Notification | undefined> {
     try {
-      const result = await this.db.select().from(notifications).where(eq(notifications.id, id));
-      return result.length > 0 ? result[0] : undefined;
+      // First check if the notifications table exists
+      const tableCheck = await this.db.execute(
+        `SELECT EXISTS (
+           SELECT FROM information_schema.tables 
+           WHERE table_name = 'notifications'
+         );`
+      );
+      
+      const tableExists = tableCheck.rows[0].exists;
+      if (!tableExists) {
+        console.warn('Notifications table does not exist, using fallback');
+        return this.memStorage.getNotification(id);
+      }
+      
+      // Use raw SQL instead of drizzle ORM to avoid column mismatches
+      const result = await this.db.execute(
+        `SELECT 
+          id, 
+          recipient_id as "recipientId", 
+          type, 
+          title, 
+          content, 
+          link, 
+          is_read as "isRead", 
+          created_at as "createdAt" 
+        FROM notifications 
+        WHERE id = $1`,
+        [id]
+      );
+      
+      return result.rows.length > 0 ? result.rows[0] as Notification : undefined;
     } catch (error) {
       console.error('Error getting notification:', error);
       return this.memStorage.getNotification(id);
@@ -1794,15 +1823,40 @@ export class PgStorage implements IStorage {
   
   async createNotification(notification: InsertNotification): Promise<Notification> {
     try {
-      const result = await this.db.insert(notifications)
-        .values({
-          ...notification,
-          createdAt: new Date(),
-          isRead: false // Default to unread 
-        })
-        .returning();
+      // First check if the notifications table exists
+      const tableCheck = await this.db.execute(
+        `SELECT EXISTS (
+           SELECT FROM information_schema.tables 
+           WHERE table_name = 'notifications'
+         );`
+      );
       
-      return result[0];
+      const tableExists = tableCheck.rows[0].exists;
+      if (!tableExists) {
+        console.warn('Notifications table does not exist, using fallback');
+        return this.memStorage.createNotification(notification);
+      }
+      
+      // Use raw SQL to match the schema exactly
+      const result = await this.db.execute(
+        `INSERT INTO notifications
+          (recipient_id, type, title, content, link, is_read, created_at)
+         VALUES
+          ($1, $2, $3, $4, $5, false, $6)
+         RETURNING
+          id, recipient_id as "recipientId", type, title, content, link,
+          is_read as "isRead", created_at as "createdAt"`,
+        [
+          notification.recipientId,
+          notification.type,
+          notification.title,
+          notification.content,
+          notification.link || null,
+          new Date()
+        ]
+      );
+      
+      return result.rows[0] as Notification;
     } catch (error) {
       console.error('Error creating notification:', error);
       return this.memStorage.createNotification(notification);

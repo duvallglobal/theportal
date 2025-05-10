@@ -105,19 +105,19 @@ export function NotificationsPopover() {
     // Otherwise navigate based on type
     switch (notification.type) {
       case 'message':
-        navigate(`/messages`);
+        navigate(`/messaging`);
         break;
       case 'appointment':
         navigate(`/appointments`);
         break;
       case 'content':
-        navigate(`/content`);
+        navigate(`/admin/content`);
         break;
       case 'verification':
-        navigate(`/profile?tab=verification`);
+        navigate(`/admin/verifications`);
         break;
       case 'billing':
-        navigate(`/billing`);
+        navigate(`/admin/billing`);
         break;
       default:
         // Just close the popover if we don't know where to navigate
