@@ -1,114 +1,305 @@
-// This script automatically pushes the schema to the database
-// It's designed to be non-interactive to avoid the need for user input
-
-import { exec } from 'child_process';
-import pg from 'pg';
-import fs from 'fs';
-import path from 'path';
+import * as pg from 'pg';
+import * as dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import * as bcrypt from 'bcryptjs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const { Pool } = pg;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
-// Database connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' 
-    ? { rejectUnauthorized: false } 
-    : undefined
 });
 
+async function hashPassword(password) {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+}
+
 async function createTablesFromSchema() {
-  console.log('Creating tables from schema...');
-  
   try {
-    // Read schema file
-    const schemaPath = path.join(__dirname, '../shared/schema.ts');
-    const schemaContent = fs.readFileSync(schemaPath, 'utf8');
+    console.log('Connected to PostgreSQL database');
     
-    // Extract table definitions using regex
-    const tableRegex = /export const (\w+) = pgTable\("(\w+)"/g;
-    let match;
-    const tables = [];
+    const client = await pool.connect();
     
-    while ((match = tableRegex.exec(schemaContent)) !== null) {
-      tables.push({
-        variableName: match[1],
-        tableName: match[2]
-      });
-    }
+    // Create tables in correct order (considering foreign key constraints)
     
-    // Check which tables exist in the database
-    const { rows } = await pool.query(`
-      SELECT table_name
-      FROM information_schema.tables
-      WHERE table_schema = 'public'
+    // Create user table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "user" (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(255) NOT NULL UNIQUE,
+        email VARCHAR(255) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        "fullName" VARCHAR(255) NOT NULL,
+        phone VARCHAR(255),
+        role VARCHAR(50) NOT NULL,
+        "onboardingStatus" VARCHAR(50),
+        "onboardingStep" INTEGER,
+        "verificationStatus" VARCHAR(50),
+        plan VARCHAR(50),
+        "stripeCustomerId" VARCHAR(255),
+        "stripeSubscriptionId" VARCHAR(255),
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
     `);
+    console.log('User table created or already exists');
     
-    const existingTables = rows.map(row => row.table_name);
+    // Create session table for session storage
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "session" (
+        sid VARCHAR NOT NULL PRIMARY KEY,
+        sess JSON NOT NULL,
+        expire TIMESTAMP(6) NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS IDX_session_expire ON "session" (expire);
+    `);
+    console.log('Session table created or already exists');
+
+    // Create profile_settings table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "profile_settings" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "preferredContactMethod" VARCHAR(50),
+        "preferredCheckInTime" VARCHAR(50),
+        timezone VARCHAR(50),
+        "brandDescription" TEXT,
+        "voiceTone" VARCHAR(255),
+        "doNotSayTerms" TEXT,
+        "uploadFrequency" VARCHAR(50),
+        "birthDate" VARCHAR(50),
+        UNIQUE("userId")
+      );
+    `);
+    console.log('Profile settings table created or already exists');
+
+    // Create platform_credentials table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "platform_credentials" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "platformType" VARCHAR(50) NOT NULL,
+        username VARCHAR(255),
+        password VARCHAR(255),
+        "needsCreation" BOOLEAN,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        UNIQUE("userId", "platformType")
+      );
+    `);
+    console.log('Platform credentials table created or already exists');
+
+    // Create growth_settings table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "growth_settings" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "growthGoals" JSONB NOT NULL DEFAULT '{}',
+        "contentTypes" JSONB NOT NULL DEFAULT '{}',
+        "doNotSayTerms" TEXT,
+        "existingContent" TEXT,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        UNIQUE("userId")
+      );
+    `);
+    console.log('Growth settings table created or already exists');
+
+    // Create content_uploads table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "content_uploads" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        "fileType" VARCHAR(50) NOT NULL,
+        "storagePath" VARCHAR(255) NOT NULL,
+        "thumbnailPath" VARCHAR(255),
+        "uploadDate" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "scheduledDate" TIMESTAMP,
+        status VARCHAR(50) NOT NULL DEFAULT 'pending',
+        tags JSONB
+      );
+    `);
+    console.log('Content uploads table created or already exists');
+
+    // Create verification_documents table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "verification_documents" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "documentType" VARCHAR(50) NOT NULL,
+        "storagePath" VARCHAR(255) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'pending',
+        "uploadDate" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "reviewDate" TIMESTAMP,
+        "reviewNotes" TEXT
+      );
+    `);
+    console.log('Verification documents table created or already exists');
+
+    // Create subscriptions table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "subscriptions" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "stripeSubscriptionId" VARCHAR(255) NOT NULL,
+        "planType" VARCHAR(50) NOT NULL,
+        status VARCHAR(50) NOT NULL,
+        "startDate" TIMESTAMP NOT NULL,
+        "endDate" TIMESTAMP,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('Subscriptions table created or already exists');
+
+    // Create conversations table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "conversations" (
+        id SERIAL PRIMARY KEY,
+        "participantIds" INTEGER[] NOT NULL,
+        title VARCHAR(255),
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "lastMessageAt" TIMESTAMP
+      );
+    `);
+    console.log('Conversations table created or already exists');
+
+    // Create messages table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "messages" (
+        id SERIAL PRIMARY KEY,
+        "conversationId" INTEGER NOT NULL REFERENCES "conversations"(id) ON DELETE CASCADE,
+        "senderId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "readAt" TIMESTAMP,
+        attachments JSONB
+      );
+    `);
+    console.log('Messages table created or already exists');
+
+    // Create appointments table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "appointments" (
+        id SERIAL PRIMARY KEY,
+        "adminId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "clientId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "appointmentDate" TIMESTAMP NOT NULL,
+        duration INTEGER NOT NULL,
+        location VARCHAR(255) NOT NULL,
+        details TEXT,
+        status VARCHAR(50) NOT NULL DEFAULT 'pending',
+        amount VARCHAR(50),
+        "photoUrl" VARCHAR(255),
+        "notificationSent" BOOLEAN,
+        "notificationMethod" VARCHAR(50),
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('Appointments table created or already exists');
+
+    // Create provider_settings table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "provider_settings" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "geographicAvailability" TEXT,
+        "minimumRate" VARCHAR(50),
+        "clientScreeningPreferences" TEXT,
+        "maximumClientsPerWeek" INTEGER,
+        "maximumWeeklyHours" INTEGER,
+        "preferredAppointmentLength" INTEGER,
+        "preferredBookingNotice" INTEGER,
+        "showOnlyVerifiedClients" BOOLEAN,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        UNIQUE("userId")
+      );
+    `);
+    console.log('Provider settings table created or already exists');
+
+    // Create analytics_reports table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "analytics_reports" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "reportDate" DATE NOT NULL,
+        period VARCHAR(20) NOT NULL,
+        "periodStart" DATE,
+        "periodEnd" DATE,
+        "totalAppointments" INTEGER NOT NULL DEFAULT 0,
+        "completedAppointments" INTEGER,
+        "canceledAppointments" INTEGER,
+        "engagementRate" VARCHAR(50),
+        "totalRevenue" NUMERIC(10,2),
+        "averageRating" NUMERIC(3,2),
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('Analytics reports table created or already exists');
+
+    // Create templates table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "templates" (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        subject TEXT,
+        content TEXT NOT NULL,
+        "isDefault" BOOLEAN,
+        "createdBy" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "updatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('Templates table created or already exists');
+
+    // Create notifications table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "notifications" (
+        id SERIAL PRIMARY KEY,
+        "userId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        content TEXT NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        "isRead" BOOLEAN NOT NULL DEFAULT FALSE,
+        "deliveryMethod" VARCHAR(50) NOT NULL,
+        "createdAt" TIMESTAMP NOT NULL DEFAULT NOW(),
+        "readAt" TIMESTAMP
+      );
+    `);
+    console.log('Notifications table created or already exists');
+
+    // Create sent_communications table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS "sent_communications" (
+        id SERIAL PRIMARY KEY,
+        type VARCHAR(50) NOT NULL,
+        "senderId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        "recipientId" INTEGER NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
+        subject TEXT,
+        content TEXT NOT NULL,
+        "templateId" INTEGER REFERENCES "templates"(id) ON DELETE SET NULL,
+        status VARCHAR(50) NOT NULL,
+        "statusMessage" TEXT,
+        "sentAt" TIMESTAMP NOT NULL DEFAULT NOW()
+      );
+    `);
+    console.log('Sent communications table created or already exists');
+
+    client.release();
+    console.log('All tables created successfully');
     
-    console.log('Existing tables:', existingTables);
-    console.log('Tables defined in schema:', tables.map(t => t.tableName));
-    
-    // Tables that don't exist yet
-    const missingTables = tables.filter(t => !existingTables.includes(t.tableName));
-    
-    if (missingTables.length === 0) {
-      console.log('All tables already exist in the database.');
-      return true;
-    }
-    
-    console.log('Missing tables:', missingTables.map(t => t.tableName));
-    
-    // Create SQL file for missing tables
-    let sqlContent = `-- Auto-generated migration script\n\n`;
-    
-    // Add user table first (since others depend on it)
-    const userTable = tables.find(t => t.tableName === 'users' || t.variableName === 'users');
-    if (userTable && !existingTables.includes(userTable.tableName)) {
-      sqlContent += `
--- Create users table
-CREATE TABLE IF NOT EXISTS "users" (
-  "id" SERIAL PRIMARY KEY,
-  "username" TEXT NOT NULL UNIQUE,
-  "password" TEXT NOT NULL,
-  "email" TEXT NOT NULL UNIQUE,
-  "full_name" TEXT NOT NULL,
-  "phone" TEXT,
-  "role" TEXT NOT NULL DEFAULT 'client',
-  "created_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-  "updated_at" TIMESTAMP NOT NULL DEFAULT NOW(),
-  "plan" TEXT,
-  "onboarding_status" TEXT DEFAULT 'incomplete',
-  "onboarding_step" INTEGER DEFAULT 1,
-  "verification_status" TEXT DEFAULT 'pending',
-  "stripe_customer_id" TEXT,
-  "stripe_subscription_id" TEXT
-);\n\n`;
-    }
-    
-    // Create other tables (skipping users since we handled it above)
-    missingTables.forEach(table => {
-      if (table.tableName !== 'users' && table.variableName !== 'users') {
-        sqlContent += `
--- Create ${table.tableName} table
-CREATE TABLE IF NOT EXISTS "${table.tableName}" (
-  "id" SERIAL PRIMARY KEY
-  -- Other columns will be defined in pg database migrations
-);\n\n`;
-      }
-    });
-    
-    // Write SQL file
-    const sqlFilePath = path.join(__dirname, 'migration.sql');
-    fs.writeFileSync(sqlFilePath, sqlContent);
-    
-    // Execute SQL file against database
-    console.log('Executing SQL migration...');
-    await pool.query(sqlContent);
-    
-    console.log('Basic tables created successfully.');
     return true;
   } catch (error) {
     console.error('Error creating tables:', error);
@@ -116,67 +307,83 @@ CREATE TABLE IF NOT EXISTS "${table.tableName}" (
   }
 }
 
-async function main() {
+async function createAdminUser() {
   try {
-    // Create basic tables first
-    const tablesCreated = await createTablesFromSchema();
+    console.log('Checking for admin user...');
+    const client = await pool.connect();
     
-    if (tablesCreated) {
-      console.log('Database tables are ready. Running drizzle-kit push...');
+    // Check if admin user exists
+    const checkResult = await client.query('SELECT * FROM "user" WHERE username = $1', ['admin']);
+    
+    if (checkResult.rowCount === 0) {
+      console.log('Creating admin user...');
+      const hashedPassword = await hashPassword('secret');
       
-      // Now run drizzle-kit push to complete the schema
-      exec('echo "yes" | npx drizzle-kit push', { shell: true }, (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error running drizzle-kit push: ${error.message}`);
-          return;
-        }
-        if (stderr) {
-          console.error(`drizzle-kit push stderr: ${stderr}`);
-          return;
-        }
-        console.log(`drizzle-kit push stdout: ${stdout}`);
-        console.log('Migration completed successfully!');
-        
-        // Create admin user for testing
-        createAdminUser();
-      });
+      const insertResult = await client.query(
+        `INSERT INTO "user" (
+          username, 
+          email, 
+          password, 
+          "fullName", 
+          phone, 
+          role, 
+          "onboardingStatus", 
+          "onboardingStep", 
+          "verificationStatus", 
+          plan, 
+          "stripeCustomerId", 
+          "stripeSubscriptionId", 
+          "createdAt", 
+          "updatedAt"
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, username, email, role`,
+        [
+          'admin',
+          'admin@example.com',
+          hashedPassword,
+          'Admin User',
+          null,
+          'admin',
+          'completed',
+          0,
+          'verified',
+          'enterprise',
+          null,
+          null,
+          new Date(),
+          new Date()
+        ]
+      );
+      
+      console.log('Admin user created successfully:', insertResult.rows[0]);
+    } else {
+      console.log('Admin user already exists:', checkResult.rows[0].username);
     }
+    
+    client.release();
+    return true;
   } catch (error) {
-    console.error('Migration error:', error);
-    process.exit(1);
+    console.error('Error creating admin user:', error);
+    return false;
   }
 }
 
-async function createAdminUser() {
+async function main() {
   try {
-    // Check if admin user already exists
-    const { rows } = await pool.query(`
-      SELECT * FROM users WHERE username = 'admin' LIMIT 1
-    `);
+    console.log('Starting database migration...');
     
-    if (rows.length > 0) {
-      console.log('Admin user already exists.');
-      return;
+    // Create tables first
+    const tablesCreated = await createTablesFromSchema();
+    
+    if (tablesCreated) {
+      // Then create admin user
+      await createAdminUser();
     }
     
-    // Pre-hashed password "secret" with bcrypt
-    const hashedPassword = '$2a$10$iqJSHD.BGr0E2IxQwYgJmeP3NvhPrXAeLSaGCj6IR/XU5QtjVu5Tm';
-    
-    // Create admin user
-    await pool.query(`
-      INSERT INTO users (
-        username, password, email, full_name, role, phone
-      ) VALUES (
-        'admin', $1, 'admin@managethefans.com', 'Admin User', 'admin', '+1234567890'
-      )
-    `, [hashedPassword]);
-    
-    console.log('Admin user created successfully.');
+    console.log('Migration completed.');
+    process.exit(0);
   } catch (error) {
-    console.error('Error creating admin user:', error);
-  } finally {
-    // Close the connection pool
-    await pool.end();
+    console.error('Migration failed:', error);
+    process.exit(1);
   }
 }
 
