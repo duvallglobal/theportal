@@ -1830,6 +1830,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  app.put("/api/admin/clients/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const clientData = req.body;
+      
+      const updatedClient = await storage.updateUser(clientId, clientData);
+      res.json(updatedClient);
+    } catch (error) {
+      console.error("Update client error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Keep legacy endpoint for backward compatibility
   app.put("/api/admin/users/:id", validateSession, validateAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);

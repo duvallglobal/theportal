@@ -38,8 +38,8 @@ interface MediaFile {
   thumbnailPath: string | null;
   scheduledDate: string | null;
   tags: string[] | null;
-  userId: number;
-  user: {
+  clientId: number;
+  client: {
     id: number;
     username: string;
     fullName: string;
@@ -82,13 +82,13 @@ export default function ContentViewer() {
       (item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
       (item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ?? false);
 
-    // Filter by user
-    const matchesUser = selectedUser === 'all' || item.userId.toString() === selectedUser;
+    // Filter by client
+    const matchesClient = selectedClient === 'all' || item.clientId.toString() === selectedClient;
 
     // Filter by file type
     const matchesType = selectedType === 'all' || item.fileType === selectedType;
 
-    return matchesSearch && matchesUser && matchesType;
+    return matchesSearch && matchesClient && matchesType;
   });
 
   // Helper to get file type icon
