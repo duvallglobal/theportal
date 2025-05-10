@@ -70,7 +70,7 @@ export function NotificationsPopover() {
     
     try {
       const response = await fetch(`/api/notifications/${notification.id}/read`, {
-        method: 'POST',
+        method: 'PATCH',
       });
       
       if (!response.ok) {

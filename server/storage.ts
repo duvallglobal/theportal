@@ -1754,6 +1754,20 @@ export class PgStorage implements IStorage {
   
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
     try {
+      // First check if the notifications table exists
+      const tableCheck = await this.db.execute(
+        `SELECT EXISTS (
+           SELECT FROM information_schema.tables 
+           WHERE table_name = 'notifications'
+         );`
+      );
+      
+      const tableExists = tableCheck.rows[0].exists;
+      if (!tableExists) {
+        console.warn('Notifications table does not exist, using fallback');
+        return this.memStorage.getNotificationsByUserId(userId);
+      }
+      
       // Use raw SQL to match exactly the DB column names
       const result = await this.db.execute(
         `SELECT 
@@ -1771,7 +1785,7 @@ export class PgStorage implements IStorage {
         [userId]
       );
       
-      return result.rows;
+      return result.rows as Notification[];
     } catch (error) {
       console.error('Error getting notifications by user ID:', error);
       return this.memStorage.getNotificationsByUserId(userId);
@@ -1797,6 +1811,20 @@ export class PgStorage implements IStorage {
   
   async markNotificationAsRead(id: number): Promise<void> {
     try {
+      // First check if the notifications table exists
+      const tableCheck = await this.db.execute(
+        `SELECT EXISTS (
+           SELECT FROM information_schema.tables 
+           WHERE table_name = 'notifications'
+         );`
+      );
+      
+      const tableExists = tableCheck.rows[0].exists;
+      if (!tableExists) {
+        console.warn('Notifications table does not exist, using fallback');
+        return this.memStorage.markNotificationAsRead(id);
+      }
+      
       // Use raw SQL to match the schema
       await this.db.execute(
         `UPDATE notifications SET is_read = true WHERE id = $1`,

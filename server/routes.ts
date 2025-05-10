@@ -1516,7 +1516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow users to mark their own notifications as read or admins to mark any notifications
-      if (notification.userId !== req.user.id && req.user.role !== "admin") {
+      if (notification.recipientId !== req.user.id && req.user.role !== "admin") {
         return res.status(403).json({ message: "Forbidden" });
       }
       
@@ -1524,6 +1524,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ success: true });
     } catch (error) {
       console.error("Mark notification as read error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Mark all notifications as read
+  app.post("/api/notifications/mark-all-read", validateSession, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      
+      // Get all unread notifications for user
+      const notifications = await storage.getNotificationsByUserId(userId);
+      const unreadNotifications = notifications.filter(n => !n.isRead);
+      
+      // Mark each as read
+      await Promise.all(
+        unreadNotifications.map(n => storage.markNotificationAsRead(n.id))
+      );
+      
+      res.status(200).json({ message: "All notifications marked as read" });
+    } catch (error) {
+      console.error("Mark all notifications as read error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
