@@ -247,7 +247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // - POST /api/auth/logout
   // - GET /api/auth/me
   
-  // General user routes for the client management page
+  // General user/client routes for the client management page
   app.get("/api/users", authMiddleware.isAuthenticated, async (req, res) => {
     try {
       // Only admins can see all users
@@ -270,6 +270,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Client terminology version of the same route
+  app.get("/api/clients", authMiddleware.isAuthenticated, async (req, res) => {
+    try {
+      // Only admins can see all clients
+      if (req.user.role !== "admin") {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const users = await storage.getAllUsers();
+      
+      // Remove sensitive data
+      const sanitizedUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Failed to fetch clients" });
+    }
+  });
+  
+  // Add a new user
   app.post("/api/users", authMiddleware.isAdmin, async (req, res) => {
     try {
       // Check if username or email already exists
