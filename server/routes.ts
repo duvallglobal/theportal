@@ -1278,7 +1278,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Messages routes
+  // Conversations routes
+  app.get("/api/conversations", validateSession, async (req, res) => {
+    try {
+      // Get all conversations where the user is a participant
+      const userConversations = await storage.getConversationsByUserId(req.user.id);
+      res.json(userConversations);
+    } catch (error) {
+      console.error("Get conversations error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+// Messages routes
   app.post("/api/messages", validateSession, async (req, res) => {
     try {
       const { conversationId, content, attachments } = req.body;
