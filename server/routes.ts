@@ -755,6 +755,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
               uploadFrequency
             });
           }
+
+          // Also update existingContent in the content strategy
+          const contentStrategy = await storage.getContentStrategyByUserId(req.user.id);
+          if (contentStrategy) {
+            await storage.updateContentStrategy(contentStrategy.id, {
+              existingContent
+            });
+          } else {
+            // Create with defaults for required fields if they don't exist yet
+            await storage.createContentStrategy({
+              userId: req.user.id,
+              existingContent,
+              growthGoals: JSON.stringify([]),
+              contentTypes: JSON.stringify([])
+            });
+          }
           break;
           
         case 6: // Verification
