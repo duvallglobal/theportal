@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 // Define the login schema
 const loginSchema = z.object({
-  email: z.string().min(1, { message: "Please enter your email or username" }),
+  username: z.string().min(1, { message: "Please enter your username or email" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
@@ -34,7 +34,7 @@ export default function SignIn() {
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
@@ -61,12 +61,12 @@ export default function SignIn() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email or Username</FormLabel>
+                    <FormLabel>Username or Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter email or username" {...field} />
+                      <Input placeholder="Enter username or email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
