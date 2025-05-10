@@ -1,4 +1,4 @@
-// Using CommonJS format since we're having issues with ES modules
+// Using CommonJS format for compatibility
 const dotenv = require('dotenv');
 dotenv.config();
 const { Pool } = require('pg');
@@ -67,6 +67,37 @@ async function updateSchema() {
       ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'pending'
     `);
     console.log('Updated verification_documents table');
+
+    // Add missing columns to content_strategies table
+    await pool.query(`
+      ALTER TABLE content_strategies
+      ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id),
+      ADD COLUMN IF NOT EXISTS growth_goals JSONB DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS content_types JSONB DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS do_not_say_terms TEXT,
+      ADD COLUMN IF NOT EXISTS existing_content TEXT,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `);
+    console.log('Updated content_strategies table');
+
+    // Add missing columns to conversations table
+    await pool.query(`
+      ALTER TABLE conversations 
+      ADD COLUMN IF NOT EXISTS last_message_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    `);
+    console.log('Updated conversations table');
+
+    // Create session table if it doesn't exist
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS session (
+        sid VARCHAR PRIMARY KEY,
+        sess JSON NOT NULL,
+        expire TIMESTAMP(6) NOT NULL
+      )
+    `);
+    console.log('Ensured session table exists');
 
     // Commit transaction
     await pool.query('COMMIT');
