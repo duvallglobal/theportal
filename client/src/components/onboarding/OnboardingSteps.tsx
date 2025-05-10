@@ -118,6 +118,9 @@ export function OnboardingSteps() {
   const { toast } = useToast();
   
   // Fetch the user's current onboarding progress
+  // Reference to the form for setting values outside submit
+  const formRef = useRef<any>(null);
+  
   useEffect(() => {
     const fetchOnboardingProgress = async () => {
       try {
@@ -147,6 +150,41 @@ export function OnboardingSteps() {
             });
             
             setOnboardingSteps(updatedSteps);
+          }
+          
+          // If the API provides form data, prefill the form
+          if (data.formData) {
+            // Store the form ref for setting values later
+            formRef.current = data.formData;
+            
+            // Set the form values after a short delay to ensure form is initialized
+            setTimeout(() => {
+              const formValues = formRef.current;
+              if (formValues) {
+                // Make sure boolean fields are properly set as booleans
+                if (formValues.needsOnlyFansCreation !== undefined) {
+                  formValues.needsOnlyFansCreation = Boolean(formValues.needsOnlyFansCreation);
+                }
+                if (formValues.needsInstagramCreation !== undefined) {
+                  formValues.needsInstagramCreation = Boolean(formValues.needsInstagramCreation);
+                }
+                if (formValues.needsTiktokCreation !== undefined) {
+                  formValues.needsTiktokCreation = Boolean(formValues.needsTiktokCreation);
+                }
+                if (formValues.needsTwitterCreation !== undefined) {
+                  formValues.needsTwitterCreation = Boolean(formValues.needsTwitterCreation);
+                }
+                if (formValues.needsSnapchatCreation !== undefined) {
+                  formValues.needsSnapchatCreation = Boolean(formValues.needsSnapchatCreation);
+                }
+                if (formValues.needsRedditCreation !== undefined) {
+                  formValues.needsRedditCreation = Boolean(formValues.needsRedditCreation);
+                }
+                
+                // Set form values
+                form.reset(formValues);
+              }
+            }, 300);
           }
         }
       } catch (error) {
@@ -188,7 +226,14 @@ export function OnboardingSteps() {
       contentTypes: [],
       notificationPreferences: [],
       servicesOffered: [],
-      bookingSummaryPreferences: []
+      bookingSummaryPreferences: [],
+      // Initialize checkbox booleans for platform creation flags
+      needsOnlyFansCreation: false,
+      needsInstagramCreation: false,
+      needsTiktokCreation: false,
+      needsTwitterCreation: false,
+      needsSnapchatCreation: false,
+      needsRedditCreation: false
     },
   });
 
