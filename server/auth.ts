@@ -104,36 +104,53 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(
       {
-        usernameField: "email", // This field can contain either username or email
+        usernameField: "username", // This is the field name in the request body
         passwordField: "password",
         passReqToCallback: true // Pass the request to access additional fields
       },
-      async (req: Request, emailOrUsername: string, password: string, done: Function) => {
+      async (req: Request, username: string, password: string, done: Function) => {
         try {
           // Enhanced logging for debugging
-          console.log(`Authentication attempt for: ${emailOrUsername}`);
+          console.log(`Authentication attempt for: ${username}`);
           
-          // Try to find user by email or username
-          let user = await storage.getUserByEmail(emailOrUsername);
+          // Try to find user by username first
+          let user = await storage.getUserByUsername(username);
           
-          // If not found by email, try username
-          if (!user) {
-            console.log(`User not found by email, trying username: ${emailOrUsername}`);
-            user = await storage.getUserByUsername(emailOrUsername);
+          // If not found by username and it looks like an email, try email
+          if (!user && username.includes('@')) {
+            console.log(`User not found by username, trying as email: ${username}`);
+            user = await storage.getUserByEmail(username);
           }
           
           if (!user) {
-            console.warn(`Authentication failed: No user found with email/username: ${emailOrUsername}`);
-            return done(null, false, { message: "Incorrect email/username or password" });
+            console.warn(`Authentication failed: No user found with username: ${username}`);
+            return done(null, false, { message: "Incorrect username or password" });
           }
           
           // Log successful user lookup
           console.log(`User found: ${user.username} (${user.role})`);
 
-          const isValidPassword = await comparePasswords(password, user.password);
-          if (!isValidPassword) {
-            console.warn(`Authentication failed: Invalid password for user: ${user.username}`);
-            return done(null, false, { message: "Incorrect email/username or password" });
+          // Try both bcrypt and scrypt comparison methods for maximum compatibility
+          let isValidPassword = false;
+          
+          try {
+            // First try with bcrypt
+            if (user.password.startsWith('$2')) {
+              isValidPassword = await bcrypt.compare(password, user.password);
+              console.log(`Bcrypt password check result: ${isValidPassword}`);
+            } else {
+              // Fall back to our custom comparison
+              isValidPassword = await comparePasswords(password, user.password);
+              console.log(`Custom password check result: ${isValidPassword}`);
+            }
+            
+            if (!isValidPassword) {
+              console.warn(`Authentication failed: Invalid password for user: ${user.username}`);
+              return done(null, false, { message: "Incorrect username or password" });
+            }
+          } catch (err) {
+            console.error("Password verification error:", err);
+            return done(null, false, { message: "Error verifying password" });
           }
 
           console.log(`Authentication successful for: ${user.username}`);
