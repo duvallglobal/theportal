@@ -1,0 +1,10 @@
+{
+  "projectId": "prj_Jpkf33me9LQ2sA97ODimzUyj1o78", 
+  "orgId": "team_yTq020RZZc3Id9dDpHw2KPdP", 
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+    "outputDirectory": "dist/public"
+  }
