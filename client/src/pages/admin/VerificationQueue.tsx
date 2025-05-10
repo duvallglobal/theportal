@@ -433,20 +433,20 @@ export default function VerificationQueue() {
                   <div className="bg-muted p-6 rounded-lg">
                     <h3 className="text-lg font-medium mb-2">Verification Status</h3>
                     <div className="flex items-center mb-4">
-                      {getStatusIcon(selectedUser.verificationStatus, selectedUser.onboardingStatus)}
+                      {getStatusIcon(selectedClient.verificationStatus, selectedClient.onboardingStatus)}
                       <span className="ml-2">
-                        {selectedUser.verificationStatus === 'verified'
+                        {selectedClient.verificationStatus === 'verified'
                           ? 'This account is verified'
-                          : selectedUser.verificationStatus === 'rejected'
+                          : selectedClient.verificationStatus === 'rejected'
                           ? 'This account has been rejected'
-                          : selectedUser.onboardingStatus === 'completed'
+                          : selectedClient.onboardingStatus === 'completed'
                           ? 'Awaiting verification'
                           : 'Onboarding in progress'}
                       </span>
                     </div>
 
                     <div className="flex flex-col gap-4">
-                      {selectedUser.onboardingStatus === 'completed' && (
+                      {selectedClient.onboardingStatus === 'completed' && (
                         <>
                           <p className="text-muted-foreground">
                             {selectedUser.verificationStatus === 'verified'
