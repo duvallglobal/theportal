@@ -1357,6 +1357,11 @@ export class PgStorage implements IStorage {
     return this.memStorage.getSubscriptionByUserId(userId);
   }
   
+  async getSubscriptionsByUserId(userId: number): Promise<Subscription[]> {
+    console.warn('Using fallback for getSubscriptionsByUserId');
+    return this.memStorage.getSubscriptionsByUserId(userId);
+  }
+  
   async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
     console.warn('Using fallback for createSubscription');
     return this.memStorage.createSubscription(subscription);
@@ -1427,6 +1432,11 @@ export class PgStorage implements IStorage {
   async markMessageAsRead(id: number): Promise<void> {
     console.warn('Using fallback for markMessageAsRead');
     return this.memStorage.markMessageAsRead(id);
+  }
+  
+  async getMessagesByUser(userId: number): Promise<Message[]> {
+    console.warn('Using fallback for getMessagesByUser');
+    return this.memStorage.getMessagesByUser(userId);
   }
   
   // Conversation methods
