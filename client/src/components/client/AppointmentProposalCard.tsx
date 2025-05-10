@@ -1,8 +1,4 @@
 import { useState } from "react";
-import { format } from "date-fns";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
 import {
   Card,
   CardContent,
@@ -17,11 +13,25 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { CalendarIcon, Clock, DollarSign, Loader2, MapPin, MessageSquare, User } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { format } from "date-fns";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  DollarSign,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface AppointmentProposalCardProps {
   appointment: {
@@ -31,281 +41,386 @@ interface AppointmentProposalCardProps {
     appointmentDate: string;
     duration: number;
     location: string;
-    details: string | null;
-    amount: string | null;
-    photoUrl: string | null;
-    status: string;
+    details?: string;
+    amount: string;
+    photoUrl?: string;
+    status: "pending" | "approved" | "declined" | "completed" | "cancelled";
+    notificationMethod: "email" | "sms" | "in-app" | "all";
+    notificationSent: boolean;
     createdAt: string;
+    admin?: {
+      id: number;
+      fullName: string;
+      username: string;
+    };
   };
 }
 
 export function AppointmentProposalCard({ appointment }: AppointmentProposalCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showDeclineDialog, setShowDeclineDialog] = useState(false);
 
   // Format appointment date
-  const formattedDate = format(new Date(appointment.appointmentDate), "PPP");
-  
-  // Get status badge variant
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "secondary";
-      case "approved":
-        return "success";
-      case "declined":
-        return "destructive";
-      case "canceled":
-        return "outline";
-      default:
-        return "default";
-    }
-  };
+  const formattedDate = format(new Date(appointment.appointmentDate), "PPPP 'at' h:mm a");
 
-  // Respond to appointment proposal
-  const respondMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await apiRequest("PUT", `/api/appointments/${id}/respond`, { status });
+  // Get status badge color and text
+  const getStatusBadge = () => {
+    let color = "";
+    let text = "";
+    
+    switch (appointment.status) {
+      case "pending":
+        color = "bg-yellow-500 text-white";
+        text = "Pending Response";
+        break;
+      case "approved":
+        color = "bg-green-500 text-white";
+        text = "Approved";
+        break;
+      case "declined":
+        color = "bg-red-500 text-white";
+        text = "Declined";
+        break;
+      case "completed":
+        color = "bg-blue-500 text-white";
+        text = "Completed";
+        break;
+      case "cancelled":
+        color = "bg-gray-500 text-white";
+        text = "Cancelled";
+        break;
+      default:
+        color = "bg-gray-300";
+        text = appointment.status;
+    }
+    
+    return <Badge className={color}>{text}</Badge>;
+  };
+  
+  // Response mutations
+  const approveAppointmentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PUT", `/api/appointments/${appointment.id}/respond`, {
+        status: "approved"
+      });
       return res.json();
     },
     onSuccess: () => {
       toast({
-        title: "Response sent",
-        description: "Your response to the appointment proposal has been sent.",
+        title: "Appointment approved",
+        description: "You have successfully approved this appointment.",
+        variant: "default",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/appointments/client"] });
+      setShowApproveDialog(false);
     },
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: `Failed to approve appointment: ${error.message}`,
         variant: "destructive",
       });
-    },
+    }
   });
-
-  const handleApprove = () => {
-    respondMutation.mutate({ id: appointment.id, status: "approved" });
-    setIsDetailsOpen(false);
-  };
-
-  const handleDecline = () => {
-    respondMutation.mutate({ id: appointment.id, status: "declined" });
-    setIsDetailsOpen(false);
-  };
+  
+  const declineAppointmentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PUT", `/api/appointments/${appointment.id}/respond`, {
+        status: "declined"
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Appointment declined",
+        description: "You have declined this appointment proposal.",
+        variant: "default",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/appointments/client"] });
+      setShowDeclineDialog(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: `Failed to decline appointment: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
 
   return (
     <>
-      <Card className="overflow-hidden">
-        <CardHeader className="bg-muted/30 pb-4">
+      <Card className="shadow-sm hover:shadow-md transition-shadow duration-200">
+        <CardHeader>
           <div className="flex justify-between items-start">
             <div>
-              <CardTitle>Appointment Proposal</CardTitle>
+              <CardTitle className="text-lg">Appointment Proposal</CardTitle>
               <CardDescription>
-                {format(new Date(appointment.createdAt), "PP")}
+                {appointment.admin?.fullName ? `From ${appointment.admin.fullName}` : "From Admin"}
               </CardDescription>
             </div>
-            <Badge variant={getStatusBadgeVariant(appointment.status)}>
-              {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-            </Badge>
+            {getStatusBadge()}
           </div>
         </CardHeader>
-        <CardContent className="pt-6 space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <CalendarIcon className="h-5 w-5 text-primary" />
+        
+        <CardContent className="space-y-4">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-primary" />
+              <span>{formattedDate}</span>
             </div>
-            <div>
-              <p className="text-sm font-medium">Date</p>
-              <p className="text-sm text-muted-foreground">{formattedDate}</p>
+            
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-primary" />
+              <span>{appointment.duration} minutes</span>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <Clock className="h-5 w-5 text-primary" />
+            
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              <span>{appointment.location}</span>
             </div>
-            <div>
-              <p className="text-sm font-medium">Duration</p>
-              <p className="text-sm text-muted-foreground">{appointment.duration} minutes</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <MapPin className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-medium">Location</p>
-              <p className="text-sm text-muted-foreground">{appointment.location}</p>
+            
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <span className="font-semibold">${appointment.amount}</span>
             </div>
           </div>
           
-          {appointment.amount && (
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-2 rounded-full">
-                <DollarSign className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">Amount</p>
-                <p className="text-sm text-muted-foreground">${appointment.amount}</p>
-              </div>
+          {appointment.photoUrl && (
+            <div className="mt-4 h-36 w-full overflow-hidden rounded-md">
+              <img
+                src={appointment.photoUrl}
+                alt="Appointment Photo"
+                className="object-cover w-full h-full"
+              />
             </div>
           )}
         </CardContent>
-        <CardFooter className="bg-muted/30 pt-4 flex justify-between">
-          <Button variant="outline" onClick={() => setIsDetailsOpen(true)}>
+        
+        <CardFooter className="flex justify-between flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setShowDetails(true)}>
             View Details
           </Button>
           
           {appointment.status === "pending" && (
-            <div className="space-x-2">
+            <div className="flex gap-2">
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={handleDecline}
-                disabled={respondMutation.isPending}
+                className="flex items-center gap-1"
+                onClick={() => setShowDeclineDialog(true)}
               >
+                <XCircle className="h-4 w-4" />
                 Decline
               </Button>
+              
               <Button
                 variant="default"
                 size="sm"
-                onClick={handleApprove}
-                disabled={respondMutation.isPending}
+                className="flex items-center gap-1"
+                onClick={() => setShowApproveDialog(true)}
               >
-                {respondMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  "Approve"
-                )}
+                <CheckCircle className="h-4 w-4" />
+                Approve
               </Button>
             </div>
           )}
         </CardFooter>
       </Card>
-
-      {/* Appointment Details Dialog */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      
+      {/* Details Dialog */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Appointment Details</DialogTitle>
+            <DialogTitle>Appointment Details</DialogTitle>
             <DialogDescription>
-              Review all details about this appointment proposal.
+              Proposed for {formattedDate}
             </DialogDescription>
           </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Photo (if available) */}
-            {appointment.photoUrl && (
-              <div className="mb-6 flex justify-center">
-                <img
-                  src={appointment.photoUrl}
-                  alt="Appointment Photo"
-                  className="rounded-md max-h-64 object-contain"
-                />
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <h3 className="text-sm font-semibold mb-1">Duration</h3>
+                <p>{appointment.duration} minutes</p>
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-semibold mb-1">Amount</h3>
+                <p>${appointment.amount}</p>
+              </div>
+              
+              <div className="col-span-2">
+                <h3 className="text-sm font-semibold mb-1">Location</h3>
+                <p>{appointment.location}</p>
+              </div>
+              
+              <div className="col-span-2">
+                <h3 className="text-sm font-semibold mb-1">Status</h3>
+                <p>{getStatusBadge()}</p>
+              </div>
+            </div>
+            
+            {appointment.details && (
+              <div>
+                <h3 className="text-sm font-semibold mb-1">Details</h3>
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm whitespace-pre-wrap">{appointment.details}</p>
+                </div>
               </div>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-sm font-medium flex items-center">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    Date
-                  </h3>
-                  <p className="text-lg">{formattedDate}</p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium flex items-center">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Duration
-                  </h3>
-                  <p className="text-lg">{appointment.duration} minutes</p>
-                </div>
-
-                <div>
-                  <h3 className="text-sm font-medium flex items-center">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Location
-                  </h3>
-                  <p className="text-lg">{appointment.location}</p>
-                </div>
-
-                {appointment.amount && (
-                  <div>
-                    <h3 className="text-sm font-medium flex items-center">
-                      <DollarSign className="h-4 w-4 mr-2" />
-                      Amount
-                    </h3>
-                    <p className="text-lg">${appointment.amount}</p>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium flex items-center">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Details about the Encounter
-                </h3>
-                <div className="mt-2 p-4 bg-muted/30 rounded-md h-[200px] overflow-y-auto">
-                  {appointment.details ? (
-                    <p className="whitespace-pre-line">{appointment.details}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic">No additional details provided.</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="text-sm font-medium flex items-center">
-                <User className="h-4 w-4 mr-2" />
-                Status
-              </h3>
-              <div className="mt-2">
-                <Badge variant={getStatusBadgeVariant(appointment.status)} className="text-base px-3 py-1">
-                  {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="flex justify-between items-center">
-            <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
-              Close
-            </Button>
             
+            {appointment.photoUrl && (
+              <div>
+                <h3 className="text-sm font-semibold mb-1">Photo</h3>
+                <div className="w-full overflow-hidden rounded-md">
+                  <img
+                    src={appointment.photoUrl}
+                    alt="Appointment Photo"
+                    className="object-cover w-full h-auto"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <DialogFooter className="flex justify-end gap-2 mt-4">
             {appointment.status === "pending" && (
-              <div className="space-x-2">
+              <div className="flex gap-2 w-full">
                 <Button
                   variant="destructive"
-                  onClick={handleDecline}
-                  disabled={respondMutation.isPending}
+                  className="flex-1"
+                  onClick={() => {
+                    setShowDetails(false);
+                    setShowDeclineDialog(true);
+                  }}
                 >
+                  <XCircle className="h-4 w-4 mr-2" />
                   Decline
                 </Button>
+                
                 <Button
                   variant="default"
-                  onClick={handleApprove}
-                  disabled={respondMutation.isPending}
+                  className="flex-1"
+                  onClick={() => {
+                    setShowDetails(false);
+                    setShowApproveDialog(true);
+                  }}
                 >
-                  {respondMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    "Approve"
-                  )}
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve
                 </Button>
               </div>
             )}
+            
+            {appointment.status !== "pending" && (
+              <Button variant="outline" onClick={() => setShowDetails(false)}>
+                Close
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Approve Dialog */}
+      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve Appointment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to approve this appointment proposal?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert>
+              <CheckCircle className="h-4 w-4" />
+              <AlertTitle>Confirmation</AlertTitle>
+              <AlertDescription>
+                By approving this appointment, you are committing to the time, date, and location specified.
+              </AlertDescription>
+            </Alert>
+          </div>
+          
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowApproveDialog(false)}
+              disabled={approveAppointmentMutation.isPending}
+            >
+              Cancel
+            </Button>
+            
+            <Button
+              variant="default"
+              onClick={() => approveAppointmentMutation.mutate()}
+              disabled={approveAppointmentMutation.isPending}
+            >
+              {approveAppointmentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Approving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve Appointment
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Decline Dialog */}
+      <Dialog open={showDeclineDialog} onOpenChange={setShowDeclineDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Decline Appointment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to decline this appointment proposal?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Warning</AlertTitle>
+              <AlertDescription>
+                Declining this appointment proposal cannot be undone. The admin will be notified of your decision.
+              </AlertDescription>
+            </Alert>
+          </div>
+          
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline" 
+              onClick={() => setShowDeclineDialog(false)}
+              disabled={declineAppointmentMutation.isPending}
+            >
+              Cancel
+            </Button>
+            
+            <Button
+              variant="destructive"
+              onClick={() => declineAppointmentMutation.mutate()}
+              disabled={declineAppointmentMutation.isPending}
+            >
+              {declineAppointmentMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Declining...
+                </>
+              ) : (
+                <>
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Decline Appointment
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

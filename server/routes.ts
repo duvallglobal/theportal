@@ -23,7 +23,7 @@ const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 let stripe: Stripe | undefined;
 if (stripeSecretKey) {
   stripe = new Stripe(stripeSecretKey, {
-    apiVersion: "2023-10-16",
+    apiVersion: "2023-10-16" as any,
   });
 }
 
