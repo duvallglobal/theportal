@@ -21,7 +21,7 @@ import SignUp from "./pages/auth/SignUp";
 import AuthPage from "./pages/auth-page";
 import NotFound from "./pages/not-found";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import UserDetails from "./pages/admin/UserDetails";
+import ClientDetails from "./pages/admin/ClientDetails";
 import AppointmentManager from "./pages/admin/AppointmentManager";
 import ContentViewer from "./pages/admin/ContentViewer";
 import VerificationQueue from "./pages/admin/VerificationQueue";
@@ -204,7 +204,7 @@ function Router() {
       
       <AdminRoute path="/admin/client-management/:id" component={() => (
         <SidebarLayout>
-          <UserDetails />
+          <ClientDetails />
         </SidebarLayout>
       )} />
       
