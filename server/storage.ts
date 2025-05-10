@@ -1059,33 +1059,57 @@ export class PgStorage implements IStorage {
     console.log('PostgreSQL storage initialized');
   }
 
-  // User methods
+  // User methods with enhanced debugging
   async getUser(id: number): Promise<User | undefined> {
     try {
+      console.log(`PgStorage: Getting user with ID: ${id}`);
       const result = await this.db.select().from(users).where(eq(users.id, id));
+      
+      if (result.length === 0) {
+        console.warn(`PgStorage: No user found with ID: ${id}`);
+        return undefined;
+      }
+      
+      console.log(`PgStorage: Found user ${result[0].username} (ID: ${id}, Role: ${result[0].role})`);
       return result[0];
     } catch (error) {
-      console.error('Error fetching user by ID:', error);
+      console.error('PgStorage Error fetching user by ID:', error);
       return undefined;
     }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     try {
+      console.log(`PgStorage: Getting user by username: ${username}`);
       const result = await this.db.select().from(users).where(eq(users.username, username));
+      
+      if (result.length === 0) {
+        console.warn(`PgStorage: No user found with username: ${username}`);
+        return undefined;
+      }
+      
+      console.log(`PgStorage: Found user ${result[0].username} (ID: ${result[0].id}, Role: ${result[0].role})`);
       return result[0];
     } catch (error) {
-      console.error('Error fetching user by username:', error);
+      console.error('PgStorage Error fetching user by username:', error);
       return undefined;
     }
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
+      console.log(`PgStorage: Getting user by email: ${email}`);
       const result = await this.db.select().from(users).where(eq(users.email, email));
+      
+      if (result.length === 0) {
+        console.warn(`PgStorage: No user found with email: ${email}`);
+        return undefined;
+      }
+      
+      console.log(`PgStorage: Found user ${result[0].username} (ID: ${result[0].id}, Role: ${result[0].role})`);
       return result[0];
     } catch (error) {
-      console.error('Error fetching user by email:', error);
+      console.error('PgStorage Error fetching user by email:', error);
       return undefined;
     }
   }

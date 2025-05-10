@@ -23,6 +23,8 @@ interface AuthContextType {
   // Helper methods for direct use in components
   login: (email: string, password: string) => Promise<SelectUser>;
   register: (fullName: string, email: string, password: string) => Promise<SelectUser>;
+  // Method to force refresh user data
+  refetchUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -33,9 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     data: user,
     error,
     isLoading,
+    refetch: refetchUser
   } = useQuery<SelectUser | null, Error>({
     queryKey: ["/api/auth/me"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: 1, // Retry once in case of network issues
+    refetchOnWindowFocus: true, // Refresh when focus returns to the window
+    staleTime: 5 * 60 * 1000, // Consider data stale after 5 minutes
   });
 
   const loginMutation = useMutation({
@@ -145,7 +151,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logoutMutation,
         registerMutation,
         login,
-        register
+        register,
+        refetchUser: async () => {
+          await refetchUser();
+        }
       }}
     >
       {children}

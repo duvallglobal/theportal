@@ -69,20 +69,22 @@ export function setupAuth(app: Express) {
   // Configure session
   const sessionOptions: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "mtf-secret-key",
-    resave: true, // True to ensure session is saved on each request
-    saveUninitialized: true, // True to save new but unmodified sessions
+    resave: false, // False to prevent unnecessary writes
+    saveUninitialized: false, // False to comply with regulations and prevent session flooding
     cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // Extended to 7 days
+      secure: process.env.NODE_ENV === "production", // Only use secure in production
+      maxAge: 30 * 24 * 60 * 60 * 1000, // Extended to 30 days for better persistence
       httpOnly: true,
-      sameSite: 'lax'
+      sameSite: 'lax',
+      path: '/' // Ensure cookie is available across the entire site
     },
     // Always use PostgreSQL store if database is available, regardless of environment
     store: process.env.DATABASE_URL
       ? new PgStore({
           pool: db,
           createTableIfMissing: true,
-          tableName: 'session' // Default table name for sessions
+          tableName: 'session', // Default table name for sessions
+          pruneSessionInterval: 60 * 60 // Prune expired sessions every hour
         })
       : new MemoryStore({
           checkPeriod: 86400000 // Prune expired entries every 24h
@@ -100,32 +102,43 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(
       {
-        usernameField: "email",
+        usernameField: "email", // This field can contain either username or email
         passwordField: "password",
+        passReqToCallback: true // Pass the request to access additional fields
       },
-      async (emailOrUsername: string, password: string, done: Function) => {
+      async (req: Request, emailOrUsername: string, password: string, done: Function) => {
         try {
+          // Enhanced logging for debugging
+          console.log(`Authentication attempt for: ${emailOrUsername}`);
+          
           // Try to find user by email or username
           let user = await storage.getUserByEmail(emailOrUsername);
           
           // If not found by email, try username
           if (!user) {
+            console.log(`User not found by email, trying username: ${emailOrUsername}`);
             user = await storage.getUserByUsername(emailOrUsername);
           }
           
           if (!user) {
+            console.warn(`Authentication failed: No user found with email/username: ${emailOrUsername}`);
             return done(null, false, { message: "Incorrect email/username or password" });
           }
+          
+          // Log successful user lookup
+          console.log(`User found: ${user.username} (${user.role})`);
 
           const isValidPassword = await comparePasswords(password, user.password);
           if (!isValidPassword) {
+            console.warn(`Authentication failed: Invalid password for user: ${user.username}`);
             return done(null, false, { message: "Incorrect email/username or password" });
           }
 
+          console.log(`Authentication successful for: ${user.username}`);
           return done(null, user);
         } catch (error) {
           console.error("Error during authentication:", error);
-          return done(error, false);
+          return done(error, false, { message: "Server error during authentication" });
         }
       }
     )
@@ -138,15 +151,20 @@ export function setupAuth(app: Express) {
 
   passport.deserializeUser(async (id: number, done: Function) => {
     try {
+      // Enhanced logging for debugging session issues
+      console.log(`Deserializing user ID: ${id}`);
+      
       const user = await storage.getUser(id);
       if (!user) {
         console.warn(`User with ID ${id} not found during deserialization`);
-        return done(null, null);
+        return done(null, false); // Use false instead of null to match Passport expectations
       }
+      
+      console.log(`Successfully deserialized user: ${user.username} (${user.role})`);
       return done(null, user);
     } catch (error) {
       console.error("Error deserializing user:", error);
-      return done(error, null);
+      return done(error, false);
     }
   });
 
