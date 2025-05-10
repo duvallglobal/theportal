@@ -9,7 +9,7 @@ import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface LoginData {
-  email: string; // Used for both email and username
+  username: string; // Primary login field - can be email or username
   password: string;
 }
 
@@ -125,8 +125,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   // Helper methods that wrap the mutations
-  const login = async (email: string, password: string): Promise<SelectUser> => {
-    return loginMutation.mutateAsync({ email, password });
+  const login = async (emailOrUsername: string, password: string): Promise<SelectUser> => {
+    return loginMutation.mutateAsync({ username: emailOrUsername, password });
   };
 
   const register = async (fullName: string, email: string, password: string): Promise<SelectUser> => {

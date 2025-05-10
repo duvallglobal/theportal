@@ -11,9 +11,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
 
-// Define the login schema - use email field for both email and username
+// Define the login schema - use username field for both email and username
 const loginSchema = z.object({
-  email: z.string().min(1, { message: "Please enter your email or username" }),
+  username: z.string().min(1, { message: "Please enter your username or email" }),
   password: z.string().min(1, { message: "Please enter your password" }),
 });
 
@@ -48,7 +48,7 @@ export default function AuthPage() {
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
+      username: "",
       password: "",
     },
   });
