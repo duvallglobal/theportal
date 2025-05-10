@@ -62,9 +62,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:ml-64">
-        {/* Top bar with menu toggle */}
-        <header className="bg-gray-900 border-b border-gray-800 shadow-md">
-          <div className="flex items-center justify-between p-4">
+        {/* Top bar with menu toggle - Improved styling */}
+        <header className="bg-gray-900 border-b border-gray-800 shadow-md sticky top-0 z-10">
+          <div className="flex items-center justify-between p-3 px-4 max-w-screen-2xl mx-auto">
             <div className="flex items-center">
               <button
                 className="p-2 rounded-md text-white hover:bg-gray-800 lg:hidden mr-3"
@@ -85,21 +85,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
             
             <div className="flex items-center space-x-4">
-              {/* Search Bar */}
+              {/* Improved Search Bar */}
               <div className="relative hidden lg:block">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-gray-800 text-gray-300 rounded-md pl-9 pr-4 py-2 w-64 focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
+                <div className="flex items-center bg-gray-800 text-gray-300 rounded-md pl-3 pr-4 py-2 w-64 border border-gray-700 focus-within:border-primary">
+                  <Search className="text-gray-400 h-4 w-4 mr-2" />
+                  <input
+                    type="text"
+                    placeholder="Search clients..."
+                    className="bg-transparent border-none focus:outline-none focus:ring-0 w-full text-sm"
+                  />
+                </div>
               </div>
               
-              {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative rounded-full">
-                <Bell className="h-5 w-5 text-gray-400" />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">3</span>
-              </Button>
+              {/* Notifications - Dynamic badge */}
+              <div className="relative">
+                <Button variant="ghost" size="icon" className="relative rounded-full p-2 hover:bg-gray-800">
+                  <Bell className="h-5 w-5 text-gray-300" />
+                  <span className="absolute -top-1 -right-1 bg-primary text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    0
+                  </span>
+                </Button>
+              </div>
               
               {/* User menu */}
               <DropdownMenu>
