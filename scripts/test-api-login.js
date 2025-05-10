@@ -11,7 +11,7 @@ async function testLogin() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: 'admin@example.com',
+        username: 'admin@example.com',
         password: 'secret',
       }),
     });
@@ -28,7 +28,7 @@ async function testLogin() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: 'client@example.com',
+        username: 'client@example.com',
         password: 'password123',
       }),
     });

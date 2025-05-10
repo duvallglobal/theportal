@@ -21,7 +21,7 @@ interface AuthContextType {
   logoutMutation: UseMutationResult<boolean, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
   // Helper methods for direct use in components
-  login: (email: string, password: string) => Promise<SelectUser>;
+  login: (emailOrUsername: string, password: string) => Promise<SelectUser>;
   register: (fullName: string, email: string, password: string) => Promise<SelectUser>;
   // Method to force refresh user data
   refetchUser: () => Promise<void>;
@@ -47,8 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
       try {
-        // The server expects the email field to be used for both email and username login
-        // We're keeping the parameter name as 'email' to maintain consistency with the form
+        // The server expects the username field for authentication
+        // This can be either a username or an email address
         const res = await apiRequest("POST", "/api/auth/login", credentials);
         return await res.json();
       } catch (error) {
