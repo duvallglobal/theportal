@@ -1714,7 +1714,6 @@ export class PgStorage implements IStorage {
       const result = await this.db.insert(notifications)
         .values({
           ...notification,
-          isRead: false,
           createdAt: new Date()
         })
         .returning();
@@ -1729,7 +1728,7 @@ export class PgStorage implements IStorage {
   async markNotificationAsRead(id: number): Promise<void> {
     try {
       await this.db.update(notifications)
-        .set({ isRead: true })
+        .set({ readAt: new Date() })
         .where(eq(notifications.id, id));
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -1900,28 +1899,74 @@ export class PgStorage implements IStorage {
   
   // Communication History methods
   async getCommunicationHistory(id: number): Promise<CommunicationHistory | undefined> {
-    console.warn('Using fallback for getCommunicationHistory');
-    return this.memStorage.getCommunicationHistory(id);
+    try {
+      const result = await this.db.select()
+        .from(communicationHistory)
+        .where(eq(communicationHistory.id, id));
+      
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error getting communication history:', error);
+      return this.memStorage.getCommunicationHistory(id);
+    }
   }
   
   async getCommunicationHistoryByRecipientId(recipientId: number): Promise<CommunicationHistory[]> {
-    console.warn('Using fallback for getCommunicationHistoryByRecipientId');
-    return this.memStorage.getCommunicationHistoryByRecipientId(recipientId);
+    try {
+      const result = await this.db.select()
+        .from(communicationHistory)
+        .where(eq(communicationHistory.recipientId, recipientId))
+        .orderBy(desc(communicationHistory.sentAt));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting communication history by recipient ID:', error);
+      return this.memStorage.getCommunicationHistoryByRecipientId(recipientId);
+    }
   }
   
   async getCommunicationHistoryBySenderId(senderId: number): Promise<CommunicationHistory[]> {
-    console.warn('Using fallback for getCommunicationHistoryBySenderId');
-    return this.memStorage.getCommunicationHistoryBySenderId(senderId);
+    try {
+      const result = await this.db.select()
+        .from(communicationHistory)
+        .where(eq(communicationHistory.senderId, senderId))
+        .orderBy(desc(communicationHistory.sentAt));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting communication history by sender ID:', error);
+      return this.memStorage.getCommunicationHistoryBySenderId(senderId);
+    }
   }
   
   async getCommunicationHistoryByType(type: string): Promise<CommunicationHistory[]> {
-    console.warn('Using fallback for getCommunicationHistoryByType');
-    return this.memStorage.getCommunicationHistoryByType(type);
+    try {
+      const result = await this.db.select()
+        .from(communicationHistory)
+        .where(eq(communicationHistory.type, type))
+        .orderBy(desc(communicationHistory.sentAt));
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting communication history by type:', error);
+      return this.memStorage.getCommunicationHistoryByType(type);
+    }
   }
   
   async createCommunicationHistory(history: InsertCommunicationHistory): Promise<CommunicationHistory> {
-    console.warn('Using fallback for createCommunicationHistory');
-    return this.memStorage.createCommunicationHistory(history);
+    try {
+      const result = await this.db.insert(communicationHistory)
+        .values({
+          ...history,
+          sentAt: new Date()
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Error creating communication history:', error);
+      return this.memStorage.createCommunicationHistory(history);
+    }
   }
 }
 
