@@ -131,6 +131,19 @@ export default function TemplateManagement() {
     }
   });
 
+  // Helper functions
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      type: "email",
+      category: "appointment",
+      subject: "",
+      content: "",
+      isDefault: false
+    });
+    setSelectedTemplate(null);
+  };
+
   // UI handlers
   const handleTabChange = (value: string) => {
     setSelectedTab(value);
@@ -154,15 +167,7 @@ export default function TemplateManagement() {
   };
 
   const handleCreateTemplate = () => {
-    setSelectedTemplate(null);
-    setFormData({
-      name: "",
-      type: "email",
-      category: "appointment",
-      subject: "",
-      content: "",
-      isDefault: false
-    });
+    resetForm();
     setIsDialogOpen(true);
   };
 
@@ -192,18 +197,6 @@ export default function TemplateManagement() {
     } else {
       createMutation.mutate(formData);
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      type: "email",
-      category: "appointment",
-      subject: "",
-      content: "",
-      isDefault: false
-    });
-    setSelectedTemplate(null);
   };
 
   // Filter templates based on selected tab and search term
