@@ -1,6 +1,6 @@
 import { ReactNode, useState } from "react";
 import { Sidebar } from "@/components/ui/sidebar";
-import { Menu, Search, Bell, User, LogOut } from "lucide-react";
+import { Menu, Search, Bell, User, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -107,29 +107,33 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </Button>
               </div>
               
-              {/* User menu */}
+              {/* Enhanced User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
-                      {user.fullName ? user.fullName.charAt(0).toUpperCase() : "A"}
+                  <Button variant="ghost" className="flex items-center space-x-2 px-3 py-2 rounded-md border border-gray-700 hover:bg-gray-800">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+                      <span className="font-semibold">MTF</span>
                     </div>
+                    <div className="hidden md:block text-left">
+                      <p className="text-sm font-medium text-white">{user.fullName || "Admin User"}</p>
+                      <p className="text-xs text-gray-400">{user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Admin"}</p>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-64 bg-gray-900 border border-gray-700 text-white">
+                  <DropdownMenuLabel className="pb-2 border-b border-gray-700">
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{user.fullName || "Admin User"}</p>
-                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                      <p className="text-sm font-medium text-white">Manage The Fans Portal</p>
+                      <p className="text-xs text-gray-400">{user.email}</p>
                     </div>
                   </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
+                  <DropdownMenuItem onClick={() => navigate('/admin/profile')} className="hover:bg-gray-800 text-gray-200 focus:bg-gray-800 focus:text-white mt-1">
                     <User className="mr-2 h-4 w-4" />
-                    <span>My Profile</span>
+                    <span>Account Settings</span>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
+                  <DropdownMenuSeparator className="bg-gray-700" />
+                  <DropdownMenuItem onClick={handleLogout} className="hover:bg-gray-800 text-gray-200 focus:bg-gray-800 focus:text-white">
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>
