@@ -10,6 +10,7 @@ import createMemoryStore from "memorystore";
 import bcrypt from "bcryptjs";
 import connectPgSimple from "connect-pg-simple";
 import db from './db';
+import { sendWelcomeEmail } from "./utils/email";
 
 declare global {
   namespace Express {
