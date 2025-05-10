@@ -1792,16 +1792,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin routes
+  app.get("/api/admin/clients", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const clients = await storage.getAllUsers();
+      res.json(clients);
+    } catch (error) {
+      console.error("Get all clients error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Keep legacy route for backward compatibility
   app.get("/api/admin/users", validateSession, validateAdmin, async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
-      res.json(users);
+      const clients = await storage.getAllUsers();
+      res.json(clients);
     } catch (error) {
       console.error("Get all users error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
 
+  // Add client-specific ID endpoint
+  app.get("/api/admin/clients/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getUser(clientId);
+      
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      res.json(client);
+    } catch (error) {
+      console.error("Get client error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
   app.put("/api/admin/users/:id", validateSession, validateAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);

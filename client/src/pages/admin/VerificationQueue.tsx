@@ -63,7 +63,7 @@ export default function VerificationQueue() {
     error,
     refetch,
   } = useQuery<Client[]>({
-    queryKey: ['/api/admin/users'],
+    queryKey: ['/api/admin/clients'],
     staleTime: 30000, // 30 seconds
   });
 
