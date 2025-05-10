@@ -50,6 +50,9 @@ const appointmentFormSchema = z.object({
   appointmentDate: z.date({
     required_error: "Please select a date",
   }),
+  appointmentTime: z.string({
+    required_error: "Please select a time",
+  }),
   duration: z.string().transform(val => parseInt(val, 10)),
   location: z.string().min(1, "Please enter a location"),
   details: z.string().optional(),
@@ -134,7 +137,18 @@ export function AppointmentWidget({ isOpen, onClose }: AppointmentWidgetProps) {
 
   // Form submission
   const onSubmit = (data: AppointmentFormValues) => {
-    createAppointmentMutation.mutate(data);
+    // Combine date and time 
+    const [hours, minutes] = data.appointmentTime.split(':').map(Number);
+    const appointmentDateTime = new Date(data.appointmentDate);
+    appointmentDateTime.setHours(hours, minutes, 0, 0);
+    
+    // Create appointment payload
+    const appointmentData = {
+      ...data,
+      appointmentDate: appointmentDateTime.toISOString()
+    };
+    
+    createAppointmentMutation.mutate(appointmentData);
   };
 
   return (
@@ -223,11 +237,49 @@ export function AppointmentWidget({ isOpen, onClose }: AppointmentWidgetProps) {
                             selected={field.value}
                             onSelect={field.onChange}
                             initialFocus
+                            disabled={(date) => date < new Date()}
                           />
                         </PopoverContent>
                       </Popover>
                       <FormDescription>
                         The date when the appointment will take place.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Time picker */}
+                <FormField
+                  control={form.control}
+                  name="appointmentTime"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        <Clock className="h-4 w-4 inline mr-2" />
+                        Appointment Time
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a time" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Array.from({ length: 24 }).map((_, hour) => {
+                            return (
+                              <SelectItem key={`${hour}:00`} value={`${hour}:00`}>
+                                {hour === 0 ? '12:00 AM' : 
+                                 hour < 12 ? `${hour}:00 AM` : 
+                                 hour === 12 ? '12:00 PM' : 
+                                 `${hour - 12}:00 PM`}
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        The time when the appointment will begin.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

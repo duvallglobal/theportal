@@ -1034,18 +1034,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin creates an appointment proposal
   app.post("/api/appointments/propose", validateSession, validateAdmin, async (req, res) => {
     try {
-      const { clientId, appointmentDate, duration, location, details, amount, photoUrl, notificationMethod } = req.body;
+      const { clientId, appointmentDate, appointmentTime, duration, location, details, amount, photoUrl, notificationMethod } = req.body;
       
       // Check if client exists
-      const client = await storage.getUser(clientId);
+      const client = await storage.getUser(parseInt(clientId));
       if (!client) {
         return res.status(404).json({ message: "Client not found" });
       }
       
-      // Create appointment proposal
+      // Create appointment proposal with date and time combined
       const appointment = await storage.createAppointment({
         adminId: req.user.id,
-        clientId,
+        clientId: parseInt(clientId),
         appointmentDate: new Date(appointmentDate),
         duration,
         location,
@@ -1055,30 +1055,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notificationMethod
       });
       
+      // Format appointment details for notifications
+      const formattedDate = new Date(appointmentDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+      });
+      
+      const appointmentSummary = `New appointment proposal for ${formattedDate} at ${location}. Duration: ${duration} minutes. Amount: $${amount}.`;
+      
       // Send notifications based on selected methods
       if (notificationMethod === 'email' || notificationMethod === 'all') {
-        // In a real implementation, you would integrate with an email service like AWS SES
-        console.log(`Email notification sent to ${client.email} about appointment ${appointment.id}`);
+        // Implement email notification with SendGrid
+        try {
+          await sendEmail({
+            to: client.email,
+            from: 'appointments@managethefans.com',
+            subject: 'New Appointment Proposal',
+            text: `${appointmentSummary}\n\nPlease log in to your account to approve or decline this appointment.`,
+            html: `
+              <div style="font-family: Arial, sans-serif; color: #333;">
+                <h2>New Appointment Proposal</h2>
+                <p>${appointmentSummary}</p>
+                <p>Please log in to your account to approve or decline this appointment.</p>
+                <a href="${process.env.APP_URL || 'http://localhost:5000'}/appointments" style="background-color: #0ea5e9; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; display: inline-block; margin-top: 15px;">View Appointment</a>
+              </div>
+            `
+          });
+          
+          console.log(`Email notification sent to ${client.email} about appointment ${appointment.id}`);
+        } catch (emailError) {
+          console.error("Failed to send email notification:", emailError);
+        }
         
         // Create a notification record
         await storage.createNotification({
-          userId: clientId,
+          userId: parseInt(clientId),
           type: 'appointment',
-          content: `You have a new appointment proposal. Review it in your dashboard.`,
+          content: appointmentSummary,
           deliveryMethod: 'email'
         });
       }
       
       if (notificationMethod === 'sms' || notificationMethod === 'all') {
-        // In a real implementation, you would integrate with an SMS service like Twilio
+        // Send SMS notification with Twilio
         if (client.phone) {
-          console.log(`SMS notification sent to ${client.phone} about appointment ${appointment.id}`);
+          try {
+            const smsMessage = `ManageTheFans: ${appointmentSummary} Login to your account to respond.`;
+            const smsResult = await sendSmsNotification(client.phone, smsMessage);
+            
+            if (smsResult) {
+              console.log(`SMS notification sent to ${client.phone} about appointment ${appointment.id}`);
+            } else {
+              console.error(`Failed to send SMS to ${client.phone}`);
+            }
+          } catch (smsError) {
+            console.error("SMS notification error:", smsError);
+          }
           
           // Create a notification record
           await storage.createNotification({
-            userId: clientId,
+            userId: parseInt(clientId),
             type: 'appointment',
-            content: `You have a new appointment proposal. Review it in your dashboard.`,
+            content: appointmentSummary,
             deliveryMethod: 'sms'
           });
         }
@@ -1086,9 +1128,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Always create in-app notification
       await storage.createNotification({
-        userId: clientId,
+        userId: parseInt(clientId),
         type: 'appointment',
-        content: `You have a new appointment proposal. Review it in your dashboard.`,
+        content: appointmentSummary,
         deliveryMethod: 'in-app'
       });
       
