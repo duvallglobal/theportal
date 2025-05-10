@@ -29,6 +29,7 @@ import VerificationQueue from "./pages/admin/VerificationQueue";
 import BillingManagement from "./pages/admin/BillingManagement";
 import AdminMessaging from "./pages/admin/Messaging";
 import ClientsManagement from "./pages/admin/ClientsManagement";
+import UnifiedUserManagement from "./pages/admin/unified-user-management";
 import TemplateManagement from "./pages/admin/TemplateManagement";
 import CommunicationHistory from "./pages/admin/CommunicationHistory";
 import SendCommunication from "./pages/admin/SendCommunication";
@@ -244,6 +245,12 @@ function Router() {
       <AdminRoute path="/admin/clients/:id" component={() => (
         <SidebarLayout>
           <UserDetails />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/unified-users" component={() => (
+        <SidebarLayout>
+          <UnifiedUserManagement />
         </SidebarLayout>
       )} />
       

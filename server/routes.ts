@@ -238,117 +238,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch pending content" });
     }
   });
-  // Auth routes
-  app.post("/api/auth/register", async (req, res, next) => {
-    try {
-      const validatedData = insertUserSchema.parse(req.body);
-      
-      // Check if user already exists
-      const existingUserByEmail = await storage.getUserByEmail(validatedData.email);
-      if (existingUserByEmail) {
-        return res.status(400).json({ message: "Email is already in use" });
-      }
-      
-      const existingUserByUsername = await storage.getUserByUsername(validatedData.username);
-      if (existingUserByUsername) {
-        return res.status(400).json({ message: "Username is already taken" });
-      }
-      
-      // Hash password
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(validatedData.password, salt);
-      
-      // Create user with default onboarding settings
-      const user = await storage.createUser({
-        ...validatedData,
-        password: hashedPassword,
-        onboardingStep: 1, // Always start at step 1
-        onboardingStatus: "in_progress",
-        verificationStatus: "pending",
-        stripeCustomerId: null,
-        stripeSubscriptionId: null
-      });
-      
-      // Log the user in
-      req.login(user, (err: any) => {
-        if (err) {
-          console.error("Login after registration error:", err);
-          return res.status(500).json({ message: "Failed to create session" });
-        }
-        
-        // Return only necessary user data (not password)
-        res.status(201).json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role,
-          onboardingStatus: user.onboardingStatus,
-          onboardingStep: user.onboardingStep
-        });
-      });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
-      }
-      console.error("Register error:", error);
-      res.status(500).json({ message: "Internal server error" });
-    }
-  });
-
-  app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: Express.User | false | null, info: any) => {
-      if (err) {
-        console.error("Login error:", err);
-        return res.status(500).json({ message: "Internal server error" });
-      }
-      
-      if (!user) {
-        return res.status(400).json({ message: info?.message || "Invalid credentials" });
-      }
-      
-      req.login(user, (err: any) => {
-        if (err) {
-          console.error("Login session error:", err);
-          return res.status(500).json({ message: "Failed to create session" });
-        }
-        
-        res.json({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          fullName: user.fullName,
-          role: user.role,
-          onboardingStatus: user.onboardingStatus,
-          onboardingStep: user.onboardingStep || 1, // Default to step 1 for new users
-          plan: user.plan
-        });
-      });
-    })(req, res, next);
-  });
-
-  app.post("/api/auth/logout", (req, res) => {
-    req.logout((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error logging out" });
-      }
-      res.json({ success: true, message: "Logged out successfully" });
-    });
-  });
-
-  app.get("/api/auth/me", validateSession, (req, res) => {
-    const user = req.user;
-    res.json({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      fullName: user.fullName,
-      role: user.role,
-      onboardingStatus: user.onboardingStatus,
-      onboardingStep: user.onboardingStep,
-      plan: user.plan
-    });
-  });
+  // Auth routes are handled in auth.ts
+  // Removing duplicate routes to avoid conflicts
+  
+  // Note: These endpoints are already defined in auth.ts:
+  // - POST /api/auth/register
+  // - POST /api/auth/login
+  // - POST /api/auth/logout
+  // - GET /api/auth/me
 
   // Profile routes
   app.get("/api/profile", validateSession, async (req, res) => {
