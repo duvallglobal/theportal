@@ -639,6 +639,11 @@ export class MemStorage implements IStorage {
       (appointment) => appointment.adminId === userId || appointment.clientId === userId
     );
   }
+  
+  // Alias method for API compatibility with statistics endpoint
+  async getAppointmentsByClient(clientId: number): Promise<Appointment[]> {
+    return this.getAppointmentsByClientId(clientId);
+  }
 
   async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
     const id = this.currentIds.appointments++;
