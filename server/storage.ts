@@ -1793,7 +1793,21 @@ export class PgStorage implements IStorage {
       
       const tableExists = tableCheck.rows[0].exists;
       if (!tableExists) {
-        console.warn('Notifications table does not exist, using fallback');
+        console.warn('Notifications table does not exist, creating table and using fallback');
+        // Create the notifications table if it doesn't exist
+        await this.db.execute(`
+          CREATE TABLE IF NOT EXISTS notifications (
+            id SERIAL PRIMARY KEY,
+            recipient_id INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            link TEXT,
+            is_read BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+            FOREIGN KEY (recipient_id) REFERENCES users(id)
+          );
+        `);
         return this.memStorage.getNotificationsByUserId(userId);
       }
       
