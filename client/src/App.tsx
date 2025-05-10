@@ -21,6 +21,7 @@ import SignUp from "./pages/auth/SignUp";
 import AuthPage from "./pages/auth-page";
 import NotFound from "./pages/not-found";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
 import UserDetails from "./pages/admin/UserDetails";
 import AppointmentManager from "./pages/admin/AppointmentManager";
 import ContentViewer from "./pages/admin/ContentViewer";
@@ -193,6 +194,12 @@ function Router() {
       <AdminRoute path="/admin" component={() => (
         <SidebarLayout>
           <AdminDashboard />
+        </SidebarLayout>
+      )} />
+      
+      <AdminRoute path="/admin/users" component={() => (
+        <SidebarLayout>
+          <UserManagement />
         </SidebarLayout>
       )} />
       
