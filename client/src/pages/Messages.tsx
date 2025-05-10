@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useMessaging } from '@/lib/context/MessagingProvider';
 import { MessageSquare, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface Conversation {
   id: number;
@@ -22,6 +23,7 @@ interface Conversation {
 
 export default function Messages() {
   const { user } = useAuth();
+  const { conversations, error, isConnected } = useMessaging();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
@@ -60,55 +62,81 @@ export default function Messages() {
 
   return (
     <SidebarLayout>
-      <div className="container mx-auto px-4 py-6">
+      <div className="container px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Messages</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
-          {/* Conversations List - Left Column (hidden in mobile when chat is shown) */}
-          {(!isMobileView || (isMobileView && !showMobileChat)) && (
-            <div className="md:col-span-1 h-full">
-              <ConversationsList 
-                onSelectConversation={setSelectedConversation}
-                selectedConversationId={selectedConversation?.id}
-              />
-            </div>
-          )}
-          
-          {/* Chat Interface - Right Column (full width in mobile) */}
-          {(!isMobileView || (isMobileView && showMobileChat)) && (
-            <div className={`${isMobileView ? 'col-span-1' : 'md:col-span-2'} h-full`}>
-              {selectedConversation && recipient ? (
-                <div className="flex flex-col h-full">
-                  {/* Mobile back button */}
-                  {isMobileView && showMobileChat && (
-                    <Button 
-                      variant="ghost" 
-                      onClick={handleBackToList}
-                      className="flex items-center mb-2 w-fit"
-                    >
-                      <ChevronLeft className="mr-1 h-4 w-4" />
-                      Back to conversations
-                    </Button>
-                  )}
-                  
-                  <ChatInterface 
-                    conversationId={selectedConversation.id}
-                    recipientName={recipient.fullName}
-                    recipientAvatar={recipient.avatarUrl}
-                  />
+        <Card className="border shadow-sm overflow-hidden">
+          <CardContent className="p-0">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-0 h-[calc(100vh-200px)]">
+              {/* Conversations List - Left Column (hidden in mobile when chat is shown) */}
+              {(!isMobileView || (isMobileView && !showMobileChat)) && (
+                <div className="md:col-span-1 h-full border-r">
+                  <div className="p-4 border-b">
+                    <h2 className="font-medium">Conversations</h2>
+                    {isConnected ? (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span className="text-xs text-muted-foreground">Connected</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                        <span className="text-xs text-muted-foreground">Offline</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="h-[calc(100%-65px)] overflow-auto">
+                    <ConversationsList 
+                      onSelectConversation={setSelectedConversation}
+                      selectedConversationId={selectedConversation?.id}
+                    />
+                  </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full bg-muted/30 rounded-lg border border-dashed">
-                  <MessageSquare className="h-12 w-12 text-muted-foreground opacity-50 mb-3" />
-                  <h3 className="text-lg font-medium">Select a conversation</h3>
-                  <p className="text-muted-foreground text-center max-w-xs mt-1">
-                    Choose a conversation from the list to start messaging
-                  </p>
+              )}
+              
+              {/* Chat Interface - Right Column (full width in mobile) */}
+              {(!isMobileView || (isMobileView && showMobileChat)) && (
+                <div className={`${isMobileView ? 'col-span-1' : 'md:col-span-2'} h-full`}>
+                  {selectedConversation && recipient ? (
+                    <div className="flex flex-col h-full">
+                      {/* Mobile back button */}
+                      {isMobileView && showMobileChat && (
+                        <Button 
+                          variant="ghost" 
+                          onClick={handleBackToList}
+                          className="flex items-center m-2 w-fit"
+                        >
+                          <ChevronLeft className="mr-1 h-4 w-4" />
+                          Back to conversations
+                        </Button>
+                      )}
+                      
+                      <ChatInterface 
+                        conversationId={selectedConversation.id}
+                        recipientName={recipient.fullName}
+                        recipientAvatar={recipient.avatarUrl}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full">
+                      <MessageSquare className="h-12 w-12 text-muted-foreground opacity-50 mb-3" />
+                      <h3 className="text-lg font-medium">No conversation selected</h3>
+                      {conversations && conversations.length > 0 ? (
+                        <p className="text-muted-foreground text-center max-w-xs mt-1">
+                          Select a conversation from the list to start messaging
+                        </p>
+                      ) : (
+                        <p className="text-muted-foreground text-center max-w-xs mt-1">
+                          You don't have any conversations yet
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </SidebarLayout>
   );
