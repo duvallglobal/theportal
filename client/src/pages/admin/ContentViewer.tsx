@@ -83,7 +83,7 @@ export default function ContentViewer() {
       (item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())) ?? false);
 
     // Filter by client
-    const matchesClient = selectedClient === 'all' || item.clientId.toString() === selectedClient;
+    const matchesClient = selectedClient === 'all' || item.userId.toString() === selectedClient;
 
     // Filter by file type
     const matchesType = selectedType === 'all' || item.fileType === selectedType;
@@ -278,7 +278,7 @@ export default function ContentViewer() {
                       </h3>
                       <div className="flex items-center mt-2 text-sm text-muted-foreground">
                         <User className="h-3 w-3 mr-1" />
-                        <span>{content.client.fullName}</span>
+                        <span>{content.user.fullName}</span>
                       </div>
                       <div className="flex items-center mt-1 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3 mr-1" />
@@ -328,7 +328,7 @@ export default function ContentViewer() {
                       <div className="flex flex-wrap gap-2 mt-1">
                         <span className="text-sm text-muted-foreground flex items-center">
                           <User className="h-3 w-3 mr-1" />
-                          {content.client.fullName}
+                          {content.user.fullName}
                         </span>
                         <span className="text-sm text-muted-foreground flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
@@ -355,7 +355,7 @@ export default function ContentViewer() {
               <DialogHeader>
                 <DialogTitle>{selectedContent.title}</DialogTitle>
                 <DialogDescription>
-                  Uploaded by {selectedContent.client.fullName} on{' '}
+                  Uploaded by {selectedContent.user.fullName} on{' '}
                   {formatDate(selectedContent.createdAt)}
                 </DialogDescription>
               </DialogHeader>
