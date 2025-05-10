@@ -14,13 +14,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 
 export interface Notification {
   id: number;
-  userId: number;
+  recipientId: number;
   title: string;
-  message: string;
+  content: string; // This is the message field
   type: string;
   isRead: boolean;
-  entityId?: number;
-  entityType?: string;
+  link?: string; // This is used instead of entityId/entityType
   createdAt: string;
 }
 
@@ -207,7 +206,7 @@ export function NotificationsPopover() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{notification.title}</p>
                       <p className="text-sm text-muted-foreground truncate">
-                        {notification.message}
+                        {notification.content}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(notification.createdAt), {

@@ -145,9 +145,12 @@ export const conversationParticipants = pgTable("conversation_participants", {
 // Notifications Table
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
+  recipientId: integer("recipient_id").notNull().references(() => users.id),
   type: text("type").notNull(), // 'content', 'appointment', 'message', etc.
+  title: text("title").notNull(),
   content: text("content").notNull(),
+  link: text("link"),
+  isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   readAt: timestamp("read_at"),
   deliveryMethod: text("delivery_method").notNull(), // 'email', 'in-app'

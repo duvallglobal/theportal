@@ -1758,11 +1758,11 @@ export class PgStorage implements IStorage {
       const result = await this.db.execute(
         `SELECT 
           id, 
-          recipient_id as "userId", 
+          recipient_id as "recipientId", 
           type, 
           title, 
           content, 
-          link as "entityLink", 
+          link, 
           is_read as "isRead", 
           created_at as "createdAt" 
         FROM notifications 
@@ -1771,7 +1771,7 @@ export class PgStorage implements IStorage {
         [userId]
       );
       
-      return result.rows;
+      return result.rows as unknown as Notification[];
     } catch (error) {
       console.error('Error getting notifications by user ID:', error);
       return this.memStorage.getNotificationsByUserId(userId);
