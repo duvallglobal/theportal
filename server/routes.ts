@@ -283,7 +283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
       
-      // Hash password - use the exported function from auth.ts
+      // Use the imported hashPassword function from auth.ts
       const hashedPassword = await hashPassword(req.body.password);
       
       // Create new user
@@ -332,7 +332,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Handle password update if provided
       let updateData = { ...req.body };
       if (req.body.password) {
-        updateData.password = await authMiddleware.hashPassword(req.body.password);
+        updateData.password = await hashPassword(req.body.password);
       } else {
         delete updateData.password;
       }

@@ -16,7 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { User, Profile, PlatformAccount } from "@shared/schema";
 
 export default function UserDetails() {
-  const [, params] = useRoute("/admin/clients/:id");
+  const [, params] = useRoute("/admin/client-management/:id");
   const userId = params?.id ? parseInt(params.id) : 0;
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -106,10 +106,10 @@ export default function UserDetails() {
     return (
       <div className="p-6">
         <div className="mb-6">
-          <Link href="/admin">
+          <Link href="/admin/client-management">
             <Button variant="ghost" className="flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Back to Admin Dashboard
+              Back to Client Management
             </Button>
           </Link>
         </div>
@@ -124,10 +124,10 @@ export default function UserDetails() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-4">
-          <Link href="/admin">
+          <Link href="/admin/client-management">
             <Button variant="ghost" className="flex items-center gap-2">
               <ArrowLeft className="w-4 h-4" />
-              Back
+              Back to Client Management
             </Button>
           </Link>
           <h1 className="text-3xl font-bold">User Details</h1>
