@@ -164,54 +164,56 @@ export function Sidebar({
   return (
     <div
       id={id}
-      className={`w-64 h-full bg-background-card shadow-lg ${className}`}
+      className={`w-64 h-full flex flex-col bg-gray-900 text-white shadow-lg ${className}`}
     >
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-xl font-semibold text-white">ManageTheFans</h1>
-          <button
-            onClick={onClose}
-            className="lg:hidden text-gray-400 hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
+      <div className="flex-grow overflow-y-auto">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-semibold text-white">ManageTheFans</h1>
+            <button
+              onClick={onClose}
+              className="lg:hidden text-gray-400 hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <nav>
+            <ul className="space-y-1">
+              {filteredNavItems.map((item) => (
+                <li key={item.path}>
+                  <Link 
+                    href={item.path}
+                    className={`flex items-center px-3 py-2.5 rounded-md transition-colors ${
+                      location === item.path
+                        ? "bg-primary text-white"
+                        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    }`}
+                  >
+                    {item.icon}
+                    <span className="ml-2">{item.name}</span>
+                    {item.badge && (
+                      <span className="ml-auto bg-red-500 text-white text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full">
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
-        <nav>
-          <ul className="space-y-2">
-            {filteredNavItems.map((item) => (
-              <li key={item.path}>
-                <Link 
-                  href={item.path}
-                  className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-                    location === item.path
-                      ? "text-white bg-primary"
-                      : "text-gray-300 hover:bg-background-lighter hover:text-white"
-                  }`}
-                >
-                  {item.icon}
-                  <span>{item.name}</span>
-                  {item.badge && (
-                    <span className="ml-auto bg-primary-light text-white text-xs font-semibold px-2 py-1 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
       </div>
-      <div className="absolute bottom-0 left-0 right-0 p-6">
+      <div className="p-4 border-t border-gray-800">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-            {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "U"}
+            {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "A"}
           </div>
           <div>
             <h4 className="text-sm font-medium text-white">
-              {user?.fullName || "User"}
+              {user?.fullName || "Admin User"}
             </h4>
             <p className="text-xs text-gray-400">
-              {user?.plan || "Basic Plan"}
+              {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || "Admin"}
             </p>
           </div>
         </div>

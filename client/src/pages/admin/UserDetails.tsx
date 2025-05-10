@@ -16,7 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { User, Profile, PlatformAccount } from "@shared/schema";
 
 export default function UserDetails() {
-  const [, params] = useRoute("/admin/users/:id");
+  const [, params] = useRoute("/admin/clients/:id");
   const userId = params?.id ? parseInt(params.id) : 0;
   const queryClient = useQueryClient();
   const { toast } = useToast();

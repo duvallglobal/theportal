@@ -1,8 +1,17 @@
 import { ReactNode, useState } from "react";
 import { Sidebar } from "@/components/ui/sidebar";
-import { Menu } from "lucide-react";
+import { Menu, Search, Bell, User, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, Link, useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -10,7 +19,16 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logoutMutation } = useAuth();
+  const [location, navigate] = useLocation();
+  
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        navigate('/auth');
+      }
+    });
+  };
   
   // While loading, show a minimal loading state
   if (isLoading) {
@@ -27,7 +45,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }
   
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-gray-950">
       {/* Sidebar - visible on large screens, hidden on mobile until toggled */}
       <div className={`fixed inset-0 z-20 transition-opacity duration-300 ${
         sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none lg:opacity-100 lg:pointer-events-auto"
@@ -45,20 +63,78 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Main content */}
       <div className="flex-1 flex flex-col lg:ml-64">
         {/* Top bar with menu toggle */}
-        <header className="bg-background-card p-4 shadow-md flex items-center justify-between">
-          <button
-            className="p-2 rounded-md text-white hover:bg-background-lighter lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-            <span className="sr-only">Open sidebar</span>
-          </button>
-          <h1 className="text-xl font-semibold text-white">Admin Portal</h1>
-          <div></div> {/* Empty div for flex spacing */}
+        <header className="bg-gray-900 border-b border-gray-800 shadow-md">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center">
+              <button
+                className="p-2 rounded-md text-white hover:bg-gray-800 lg:hidden mr-3"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Open sidebar</span>
+              </button>
+              
+              {/* Show this breadcrumb/title on pages other than dashboard */}
+              {location !== '/admin/dashboard' && (
+                <div className="flex items-center">
+                  <Link href="/admin/dashboard" className="text-gray-400 hover:text-white">
+                    Back to Admin Dashboard
+                  </Link>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              {/* Search Bar */}
+              <div className="relative hidden lg:block">
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="bg-gray-800 text-gray-300 rounded-md pl-9 pr-4 py-2 w-64 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+                <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
+              </div>
+              
+              {/* Notifications */}
+              <Button variant="ghost" size="icon" className="relative rounded-full">
+                <Bell className="h-5 w-5 text-gray-400" />
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">3</span>
+              </Button>
+              
+              {/* User menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
+                      {user.fullName ? user.fullName.charAt(0).toUpperCase() : "A"}
+                    </div>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user.fullName || "Admin User"}</p>
+                      <p className="text-xs text-muted-foreground">{user.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/admin/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>My Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
         </header>
         
         {/* Main content area */}
-        <main className="flex-1 overflow-auto bg-background">
+        <main className="flex-1 overflow-auto p-6 bg-gray-950">
           {children}
         </main>
       </div>
