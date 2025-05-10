@@ -51,7 +51,7 @@ export default function ContentViewer() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<string>('all');
+  const [selectedClient, setSelectedClient] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedContent, setSelectedContent] = useState<MediaFile | null>(null);
