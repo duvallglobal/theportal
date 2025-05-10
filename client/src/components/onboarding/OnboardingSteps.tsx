@@ -123,7 +123,14 @@ export function OnboardingSteps() {
   // Create form based on current step
   const form = useForm<any>({
     resolver: zodResolver(getSchemaForStep(currentStep)),
-    defaultValues: {},
+    defaultValues: {
+      // Initialize arrays for checkbox groups
+      growthGoals: [],
+      contentTypes: [],
+      notificationPreferences: [],
+      servicesOffered: [],
+      bookingSummaryPreferences: []
+    },
   });
 
   const onSubmit = async (data: any) => {
@@ -386,21 +393,21 @@ export function OnboardingSteps() {
   // Render brand strategy step content
   const renderBrandStrategyStep = () => {
     return (
-      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
-        <h2 className="text-xl font-semibold text-white mb-4">Step 3: Brand Strategy</h2>
-        <p className="text-gray-400 mb-6">Help us understand your brand and content style preferences.</p>
+      <div className="bg-background-card rounded-xl shadow-md p-4 sm:p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-2 sm:mb-4">Step 3: Brand Strategy</h2>
+        <p className="text-gray-400 mb-4 sm:mb-6 text-sm sm:text-base">Help us understand your brand and content style preferences.</p>
         
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           <FormField
             control={form.control}
             name="growthGoals"
             render={() => (
               <FormItem>
-                <div className="mb-4">
-                  <FormLabel>Growth Goals</FormLabel>
-                  <p className="text-gray-400 text-sm">Select all that apply to your goals</p>
+                <div className="mb-2 sm:mb-4">
+                  <FormLabel className="text-base sm:text-lg">Growth Goals</FormLabel>
+                  <p className="text-gray-400 text-xs sm:text-sm">Select all that apply to your goals</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                   {['More subscribers', 'Higher engagement', 'Increased visibility', 'Better content quality', 'Cross-platform growth', 'Monetization opportunities'].map((goal) => (
                     <FormField
                       key={goal}
@@ -408,7 +415,7 @@ export function OnboardingSteps() {
                       name="growthGoals"
                       render={({ field }) => {
                         return (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0 bg-background/40 p-2 rounded-md">
                             <FormControl>
                               <Checkbox
                                 checked={field.value?.includes(goal)}
@@ -419,7 +426,7 @@ export function OnboardingSteps() {
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal">
+                            <FormLabel className="font-normal text-sm sm:text-base m-0">
                               {goal}
                             </FormLabel>
                           </FormItem>
@@ -438,11 +445,11 @@ export function OnboardingSteps() {
             name="contentTypes"
             render={() => (
               <FormItem>
-                <div className="mb-4">
-                  <FormLabel>Content Types</FormLabel>
-                  <p className="text-gray-400 text-sm">What types of content are you interested in creating?</p>
+                <div className="mb-2 sm:mb-4">
+                  <FormLabel className="text-base sm:text-lg">Content Types</FormLabel>
+                  <p className="text-gray-400 text-xs sm:text-sm">What types of content are you interested in creating?</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                   {['Photos', 'Videos', 'Stories/Reels', 'Live streams', 'Text posts', 'Audio content'].map((type) => (
                     <FormField
                       key={type}
@@ -450,7 +457,7 @@ export function OnboardingSteps() {
                       name="contentTypes"
                       render={({ field }) => {
                         return (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0 bg-background/40 p-2 rounded-md">
                             <FormControl>
                               <Checkbox
                                 checked={field.value?.includes(type)}
@@ -461,7 +468,7 @@ export function OnboardingSteps() {
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className="font-normal">
+                            <FormLabel className="font-normal text-sm sm:text-base m-0">
                               {type}
                             </FormLabel>
                           </FormItem>
@@ -480,9 +487,9 @@ export function OnboardingSteps() {
             name="brandDescription"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Describe Your Brand</FormLabel>
+                <FormLabel className="text-base sm:text-lg">Describe Your Brand</FormLabel>
                 <FormControl>
-                  <Input placeholder="E.g., authentic, edgy, luxurious, etc." {...field} />
+                  <Input placeholder="E.g., authentic, edgy, luxurious, etc." {...field} className="h-10 sm:h-11" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -494,10 +501,10 @@ export function OnboardingSteps() {
             name="voiceTone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Voice Tone</FormLabel>
+                <FormLabel className="text-base sm:text-lg">Voice Tone</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger className="h-10 sm:h-11">
                       <SelectValue placeholder="Select your preferred voice tone" />
                     </SelectTrigger>
                   </FormControl>
@@ -520,11 +527,11 @@ export function OnboardingSteps() {
             name="doNotSayTerms"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Do Not Say Terms</FormLabel>
+                <FormLabel className="text-base sm:text-lg">Do Not Say Terms</FormLabel>
                 <FormControl>
                   <Textarea 
                     placeholder="List any terms or phrases you'd like to avoid in your content" 
-                    className="min-h-[100px]"
+                    className="min-h-[80px] sm:min-h-[100px]"
                     {...field} 
                   />
                 </FormControl>
