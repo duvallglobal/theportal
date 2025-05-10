@@ -1754,24 +1754,24 @@ export class PgStorage implements IStorage {
   
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
     try {
-      // Use select with column mapping instead of raw SQL
-      const result = await this.db.select({
-        id: notifications.id,
-        recipientId: notifications.recipientId,
-        type: notifications.type,
-        title: notifications.title,
-        content: notifications.content,
-        link: notifications.link,
-        isRead: notifications.isRead,
-        createdAt: notifications.createdAt,
-        readAt: notifications.readAt,
-        deliveryMethod: notifications.deliveryMethod
-      })
-      .from(notifications)
-      .where(eq(notifications.recipientId, userId))
-      .orderBy(desc(notifications.createdAt));
+      // Use raw SQL to match exactly the DB column names
+      const result = await this.db.execute(
+        `SELECT 
+          id, 
+          recipient_id as "recipientId", 
+          type, 
+          title, 
+          content, 
+          link, 
+          is_read as "isRead", 
+          created_at as "createdAt" 
+        FROM notifications 
+        WHERE recipient_id = $1 
+        ORDER BY created_at DESC`,
+        [userId]
+      );
       
-      return result;
+      return result.rows;
     } catch (error) {
       console.error('Error getting notifications by user ID:', error);
       return this.memStorage.getNotificationsByUserId(userId);
@@ -1797,9 +1797,11 @@ export class PgStorage implements IStorage {
   
   async markNotificationAsRead(id: number): Promise<void> {
     try {
-      await this.db.update(notifications)
-        .set({ readAt: new Date() })
-        .where(eq(notifications.id, id));
+      // Use raw SQL to match the schema
+      await this.db.execute(
+        `UPDATE notifications SET is_read = true WHERE id = $1`,
+        [id]
+      );
     } catch (error) {
       console.error('Error marking notification as read:', error);
       return this.memStorage.markNotificationAsRead(id);

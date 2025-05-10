@@ -128,7 +128,7 @@ export function NotificationsPopover() {
   // Mark all as read
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('/api/notifications/read-all', {
+      const response = await fetch('/api/notifications/mark-all-read', {
         method: 'POST',
       });
       

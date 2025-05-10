@@ -152,8 +152,6 @@ export const notifications = pgTable("notifications", {
   link: text("link"),
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  readAt: timestamp("read_at"),
-  deliveryMethod: text("delivery_method").notNull(), // 'email', 'in-app'
 });
 
 // RentMen Settings Table
@@ -300,7 +298,6 @@ export const insertRentMenSettingsSchema = createInsertSchema(rentMenSettings).o
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
-  readAt: true,
   isRead: true
 });
 
