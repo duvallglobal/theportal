@@ -246,6 +246,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // - POST /api/auth/login
   // - POST /api/auth/logout
   // - GET /api/auth/me
+  
+  // General user routes for the client management page
+  app.get("/api/users", authMiddleware.isAuthenticated, async (req, res) => {
+    try {
+      // Only admins can see all users
+      if (req.user.role !== "admin") {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const users = await storage.getAllUsers();
+      
+      // Remove sensitive data
+      const sanitizedUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json(sanitizedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  app.post("/api/users", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const emailExists = await storage.getUserByEmail(req.body.email);
+      if (emailExists) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Hash password
+      const hashedPassword = await authMiddleware.hashPassword(req.body.password);
+      
+      // Create new user
+      const newUser = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+        role: req.body.role || "client" // Default to client role
+      });
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = newUser;
+      
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+  
+  app.put("/api/users/:id", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Verify user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // If changing username, check if it's unique
+      if (req.body.username && req.body.username !== user.username) {
+        const existingUser = await storage.getUserByUsername(req.body.username);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: "Username already exists" });
+        }
+      }
+      
+      // If changing email, check if it's unique
+      if (req.body.email && req.body.email !== user.email) {
+        const emailExists = await storage.getUserByEmail(req.body.email);
+        if (emailExists && emailExists.id !== userId) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+      }
+      
+      // Handle password update if provided
+      let updateData = { ...req.body };
+      if (req.body.password) {
+        updateData.password = await authMiddleware.hashPassword(req.body.password);
+      } else {
+        delete updateData.password;
+      }
+      
+      // Update user
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  app.delete("/api/users/:id", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // Verify user exists
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't allow deleting the main admin account
+      if (user.username === "admin") {
+        return res.status(403).json({ message: "Cannot delete the main admin account" });
+      }
+      
+      // Delete user
+      await storage.deleteUser(userId);
+      
+      res.json({ success: true, message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
 
   // Profile routes
   app.get("/api/profile", validateSession, async (req, res) => {
