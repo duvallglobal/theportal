@@ -33,6 +33,7 @@ export const profiles = pgTable("profiles", {
   doNotSayTerms: text("do_not_say_terms"),
   uploadFrequency: text("upload_frequency"), // 'daily', 'weekly', 'biweekly'
   birthDate: text("birth_date"),
+  preferredHandles: text("preferred_handles"),
 });
 
 // Platform Accounts Table
