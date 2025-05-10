@@ -449,17 +449,17 @@ export default function VerificationQueue() {
                       {selectedClient.onboardingStatus === 'completed' && (
                         <>
                           <p className="text-muted-foreground">
-                            {selectedUser.verificationStatus === 'verified'
+                            {selectedClient.verificationStatus === 'verified'
                               ? 'This account has been verified and can fully use the platform.'
-                              : selectedUser.verificationStatus === 'rejected'
+                              : selectedClient.verificationStatus === 'rejected'
                               ? 'This account has been rejected and may need to submit additional documentation.'
                               : 'This account has completed onboarding but has not been verified yet.'}
                           </p>
 
-                          {!selectedUser.verificationStatus && (
+                          {!selectedClient.verificationStatus && (
                             <div className="flex gap-2 mt-2">
                               <Button
-                                onClick={() => handleVerifyUser(selectedUser.id)}
+                                onClick={() => handleVerifyClient(selectedClient.id)}
                                 className="bg-green-600 hover:bg-green-700"
                               >
                                 <Check className="mr-2 h-4 w-4" />
@@ -467,7 +467,7 @@ export default function VerificationQueue() {
                               </Button>
                               <Button
                                 variant="outline"
-                                onClick={() => handleRejectUser(selectedUser.id)}
+                                onClick={() => handleRejectClient(selectedClient.id)}
                                 className="text-red-500 hover:text-red-600"
                               >
                                 <X className="mr-2 h-4 w-4" />
@@ -476,10 +476,10 @@ export default function VerificationQueue() {
                             </div>
                           )}
 
-                          {selectedUser.verificationStatus === 'verified' && (
+                          {selectedClient.verificationStatus === 'verified' && (
                             <Button
                               variant="outline"
-                              onClick={() => handleRejectUser(selectedUser.id)}
+                              onClick={() => handleRejectClient(selectedClient.id)}
                               className="w-fit"
                             >
                               <X className="mr-2 h-4 w-4" />
@@ -487,9 +487,9 @@ export default function VerificationQueue() {
                             </Button>
                           )}
 
-                          {selectedUser.verificationStatus === 'rejected' && (
+                          {selectedClient.verificationStatus === 'rejected' && (
                             <Button
-                              onClick={() => handleVerifyUser(selectedUser.id)}
+                              onClick={() => handleVerifyClient(selectedClient.id)}
                               className="bg-green-600 hover:bg-green-700 w-fit"
                             >
                               <Check className="mr-2 h-4 w-4" />
