@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
 
-// Define the login schema
+// Define the login schema - use email field for both email and username
 const loginSchema = z.object({
   email: z.string().min(1, { message: "Please enter your email or username" }),
   password: z.string().min(1, { message: "Please enter your password" }),
