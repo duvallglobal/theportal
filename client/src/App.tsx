@@ -21,15 +21,13 @@ import SignUp from "./pages/auth/SignUp";
 import AuthPage from "./pages/auth-page";
 import NotFound from "./pages/not-found";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import UserManagement from "./pages/admin/UserManagement";
 import UserDetails from "./pages/admin/UserDetails";
 import AppointmentManager from "./pages/admin/AppointmentManager";
 import ContentViewer from "./pages/admin/ContentViewer";
 import VerificationQueue from "./pages/admin/VerificationQueue";
 import BillingManagement from "./pages/admin/BillingManagement";
 import AdminMessaging from "./pages/admin/Messaging";
-import ClientsManagement from "./pages/admin/ClientsManagement";
-import UnifiedUserManagement from "./pages/admin/unified-user-management";
+import ClientManagement from "./pages/admin/client-management";
 import TemplateManagement from "./pages/admin/TemplateManagement";
 import CommunicationHistory from "./pages/admin/CommunicationHistory";
 import SendCommunication from "./pages/admin/SendCommunication";
@@ -198,13 +196,17 @@ function Router() {
         </SidebarLayout>
       )} />
       
-      <AdminRoute path="/admin/users" component={() => (
+      <AdminRoute path="/admin/client-management" component={() => (
         <SidebarLayout>
-          <UserManagement />
+          <ClientManagement />
         </SidebarLayout>
       )} />
       
-      {/* Removed duplicate "/admin/users/:id" route, using "/admin/clients/:id" instead */}
+      <AdminRoute path="/admin/client-management/:id" component={() => (
+        <SidebarLayout>
+          <UserDetails />
+        </SidebarLayout>
+      )} />
       
       <AdminRoute path="/admin/appointments" component={() => (
         <SidebarLayout>
@@ -233,24 +235,6 @@ function Router() {
       <AdminRoute path="/admin/messaging" component={() => (
         <SidebarLayout>
           <AdminMessaging />
-        </SidebarLayout>
-      )} />
-      
-      <AdminRoute path="/admin/clients" component={() => (
-        <SidebarLayout>
-          <ClientsManagement />
-        </SidebarLayout>
-      )} />
-      
-      <AdminRoute path="/admin/clients/:id" component={() => (
-        <SidebarLayout>
-          <UserDetails />
-        </SidebarLayout>
-      )} />
-      
-      <AdminRoute path="/admin/unified-users" component={() => (
-        <SidebarLayout>
-          <UnifiedUserManagement />
         </SidebarLayout>
       )} />
       
