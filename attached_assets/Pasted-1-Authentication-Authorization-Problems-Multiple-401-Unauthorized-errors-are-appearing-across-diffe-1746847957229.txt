@@ -1,0 +1,44 @@
+1. Authentication/Authorization Problems
+Multiple 401 Unauthorized errors are appearing across different sections of the application:
+
+When creating a new client: Error creating client 401: {"message":"Unauthorized"}
+When loading dashboard data: Error Loading Data 401: {"message":"Unauthorized"}
+2. Data Loading Failures
+Several areas of the application cannot load necessary data:
+
+Content Viewer: "Error loading content" with a suggestion to refresh the page
+User Management: "Error loading users. Please try again"
+Client selection dropdown appears empty when trying to create appointments
+3. Redundant User/Client Management Systems
+Key Issue: The current separation between "Clients Management" and "User Management" creates unnecessary complexity and confusion:
+
+Current Structure Problems:
+
+Duplicate user interfaces for managing essentially the same entities
+Separate data sources for what should be a unified user database
+Inconsistent user experiences when managing different user types
+Higher maintenance burden with two systems to update
+Recommendation:
+
+Consolidate these into a single "User Management" system
+Implement role-based filtering (Admin, Client, etc.) within this unified system
+Create a consistent interface for adding and managing all user types
+Simplify the permission model with a unified approach to user management
+4. Root Cause Analysis
+These issues appear to stem from either:
+
+Expired authentication token/session
+Backend API permission issues
+Cross-origin resource sharing (CORS) configuration problems
+API endpoint changes that haven't been reflected in the frontend
+Possible server-side issues on Replit's hosting environment
+Recommendation for Replit
+Please investigate:
+
+Backend authentication middleware - verify token validation is working correctly
+API permissions for the current user role
+Server logs for any specific error details not displayed in the UI
+Recent deployment changes that may have affected API routes or authentication
+Session management and token refreshing mechanisms
+Consolidate the user and client management systems into a single, cohesive interface with role-based filtering
+The consistent 401 errors across different features suggest this is a system-wide authentication issue rather than feature-specific bugs.
