@@ -46,83 +46,32 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Dashboard() {
-  // Mock data for dashboard stats
-  const stats = [
-    {
-      title: "OnlyFans Subscribers",
-      value: "753",
-      icon: <Users className="text-red-400" />,
-      iconBgColor: "bg-primary bg-opacity-20",
-      trend: { direction: 'up', value: '12% from last month' }
-    },
-    {
-      title: "Content Uploads",
-      value: "24",
-      icon: <Upload className="text-blue-400" />,
-      iconBgColor: "bg-blue-500 bg-opacity-20",
-      trend: { direction: 'neutral', value: 'Same as last week' }
-    },
-    {
-      title: "Engagement Rate",
-      value: "18.2%",
-      icon: <LineChart className="text-purple-400" />,
-      iconBgColor: "bg-purple-500 bg-opacity-20",
-      trend: { direction: 'up', value: '3.1% increase' }
-    },
-    {
-      title: "Next Payment",
-      value: "$199",
-      icon: <CreditCard className="text-green-400" />,
-      iconBgColor: "bg-green-500 bg-opacity-20",
-      additionalInfo: 'Due in 7 days'
-    }
-  ];
+  // User stats from API
+  const { data: statsData, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/client/stats'],
+    enabled: true, // We'll handle the empty state in the UI
+  });
+  
+  // Default empty stats array
+  const stats = statsData?.length ? statsData : [];
 
-  // Recent activities
-  const activities: Activity[] = [
-    {
-      id: '1',
-      title: 'Content approved',
-      description: 'Your latest photo set was approved',
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      icon: <CheckCircle className="h-4 w-4 text-green-400" />,
-      iconBgColor: 'bg-green-500 bg-opacity-20'
-    },
-    {
-      id: '2',
-      title: 'Content uploaded',
-      description: 'You uploaded 5 new photos',
-      timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-      icon: <CloudUpload className="h-4 w-4 text-blue-400" />,
-      iconBgColor: 'bg-blue-500 bg-opacity-20'
-    },
-    {
-      id: '3',
-      title: 'Payment processed',
-      description: 'Monthly subscription payment processed',
-      timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
-      icon: <CreditCard className="h-4 w-4 text-yellow-400" />,
-      iconBgColor: 'bg-yellow-500 bg-opacity-20'
-    }
-  ];
+  // Fetch recent activities from API
+  const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
+    queryKey: ['/api/client/activities'],
+    enabled: true, // We'll handle the empty state in the UI
+  });
+  
+  // Default empty activities array
+  const activities: Activity[] = activitiesData?.length ? activitiesData : [];
 
-  // Upcoming appointments
-  const appointments: Appointment[] = [
-    {
-      id: '1',
-      title: 'Client Meeting',
-      status: 'confirmed',
-      date: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
-      location: 'Downtown Hotel, Room 315'
-    },
-    {
-      id: '2',
-      title: 'Photo Session',
-      status: 'pending',
-      date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // In 4 days
-      location: 'Studio One, 123 Main St'
-    }
-  ];
+  // Fetch upcoming appointments from API
+  const { data: appointmentsData, isLoading: appointmentsLoading } = useQuery({
+    queryKey: ['/api/client/appointments'],
+    enabled: true, // We'll handle the empty state in the UI
+  });
+  
+  // Default empty appointments array
+  const appointments: Appointment[] = appointmentsData?.length ? appointmentsData : [];
 
   // Workflow cards
   const workflowCards = [
@@ -192,11 +141,13 @@ export default function Dashboard() {
       </div>
 
       {/* Onboarding Progress */}
-      <OnboardingProgressCard 
-        completedSteps={5}
-        totalSteps={8}
-        className="mb-8"
-      />
+      {user && (
+        <OnboardingProgressCard 
+          completedSteps={user.onboardingStep || 0}
+          totalSteps={8}
+          className="mb-8"
+        />
+      )}
 
       {/* Workflow Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
