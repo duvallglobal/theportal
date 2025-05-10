@@ -36,7 +36,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-interface User {
+interface Client {
   id: number;
   username: string;
   fullName: string;
@@ -53,42 +53,42 @@ export default function VerificationQueue() {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isClientDetailOpen, setIsClientDetailOpen] = useState(false);
 
-  // Fetch all users
+  // Fetch all clients
   const {
-    data: users = [],
+    data: clients = [],
     isLoading,
     error,
     refetch,
-  } = useQuery<User[]>({
+  } = useQuery<Client[]>({
     queryKey: ['/api/admin/users'],
     staleTime: 30000, // 30 seconds
   });
 
   // Apply filters and search
-  const filteredUsers = users.filter((user) => {
+  const filteredClients = clients.filter((client) => {
     // Filter by search term
     const matchesSearch =
       searchTerm === '' ||
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.username.toLowerCase().includes(searchTerm.toLowerCase());
+      client.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.username.toLowerCase().includes(searchTerm.toLowerCase());
 
     // Filter by status
     let matchesStatus = true;
     if (statusFilter === 'pending') {
-      matchesStatus = user.onboardingStatus === 'completed' && (user.verificationStatus === 'pending' || !user.verificationStatus);
+      matchesStatus = client.onboardingStatus === 'completed' && (client.verificationStatus === 'pending' || !client.verificationStatus);
     } else if (statusFilter === 'verified') {
-      matchesStatus = user.verificationStatus === 'verified';
+      matchesStatus = client.verificationStatus === 'verified';
     } else if (statusFilter === 'rejected') {
-      matchesStatus = user.verificationStatus === 'rejected';
+      matchesStatus = client.verificationStatus === 'rejected';
     } else if (statusFilter === 'onboarded') {
-      matchesStatus = user.onboardingStatus === 'completed';
+      matchesStatus = client.onboardingStatus === 'completed';
     }
 
-    return matchesSearch && matchesStatus && user.role === 'client';
+    return matchesSearch && matchesStatus && client.role === 'client';
   });
 
   // Get verification status badge
@@ -126,27 +126,27 @@ export default function VerificationQueue() {
     });
   };
 
-  const handleRowClick = (user: User) => {
-    setSelectedUser(user);
-    setIsUserDetailOpen(true);
+  const handleRowClick = (client: Client) => {
+    setSelectedClient(client);
+    setIsClientDetailOpen(true);
   };
 
-  const handleVerifyUser = (userId: number) => {
+  const handleVerifyClient = (clientId: number) => {
     // In a real implementation this would be an API call
     toast({
       title: 'Verification status updated',
-      description: 'User has been marked as verified.',
+      description: 'Client has been marked as verified.',
     });
-    setIsUserDetailOpen(false);
+    setIsClientDetailOpen(false);
   };
 
-  const handleRejectUser = (userId: number) => {
+  const handleRejectClient = (clientId: number) => {
     // In a real implementation this would be an API call
     toast({
       title: 'Verification status updated',
-      description: 'User has been marked as rejected.',
+      description: 'Client has been marked as rejected.',
     });
-    setIsUserDetailOpen(false);
+    setIsClientDetailOpen(false);
   };
 
   return (
@@ -206,17 +206,17 @@ export default function VerificationQueue() {
           </div>
         </div>
 
-        {/* Users table */}
+        {/* Clients table */}
         <Card>
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
               </div>
-            ) : filteredUsers.length === 0 ? (
+            ) : filteredClients.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64">
                 <User className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
-                <h3 className="text-lg font-medium">No users found</h3>
+                <h3 className="text-lg font-medium">No clients found</h3>
                 <p className="text-muted-foreground text-center max-w-md mt-1">
                   Try adjusting your filters or search terms to find what you're looking for.
                 </p>
@@ -233,31 +233,31 @@ export default function VerificationQueue() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
+                  {filteredClients.map((client) => (
                     <TableRow
-                      key={user.id}
+                      key={client.id}
                       className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => handleRowClick(user)}
+                      onClick={() => handleRowClick(client)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarFallback>{user.fullName.charAt(0)}</AvatarFallback>
+                            <AvatarFallback>{client.fullName.charAt(0)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{user.fullName}</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                            <p className="font-medium">{client.fullName}</p>
+                            <p className="text-sm text-muted-foreground">{client.email}</p>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>@{user.username}</TableCell>
+                      <TableCell>@{client.username}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(user.verificationStatus, user.onboardingStatus)}
-                          {getStatusBadge(user.verificationStatus, user.onboardingStatus)}
+                          {getStatusIcon(client.verificationStatus, client.onboardingStatus)}
+                          {getStatusBadge(client.verificationStatus, client.onboardingStatus)}
                         </div>
                       </TableCell>
-                      <TableCell>{formatDate(user.createdAt)}</TableCell>
+                      <TableCell>{formatDate(client.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon">
                           <ChevronRight className="h-4 w-4" />
@@ -272,9 +272,9 @@ export default function VerificationQueue() {
         </Card>
       </div>
 
-      {/* User detail dialog */}
-      <Dialog open={isUserDetailOpen} onOpenChange={setIsUserDetailOpen}>
-        {selectedUser && (
+      {/* Client detail dialog */}
+      <Dialog open={isClientDetailOpen} onOpenChange={setIsClientDetailOpen}>
+        {selectedClient && (
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Client Details</DialogTitle>
@@ -296,13 +296,13 @@ export default function VerificationQueue() {
                     <div className="flex items-center gap-4">
                       <Avatar className="h-16 w-16">
                         <AvatarFallback className="text-lg">
-                          {selectedUser.fullName.charAt(0)}
+                          {selectedClient.fullName.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
 
                       <div>
-                        <h3 className="text-xl font-semibold">{selectedUser.fullName}</h3>
-                        <p className="text-muted-foreground">@{selectedUser.username}</p>
+                        <h3 className="text-xl font-semibold">{selectedClient.fullName}</h3>
+                        <p className="text-muted-foreground">@{selectedClient.username}</p>
                       </div>
                     </div>
 
