@@ -1289,6 +1289,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  app.post("/api/conversations", validateSession, async (req, res) => {
+    try {
+      const { title, participantIds } = req.body;
+      
+      if (!participantIds || !Array.isArray(participantIds)) {
+        return res.status(400).json({ message: "participantIds must be an array" });
+      }
+      
+      // Ensure the current user is part of the conversation
+      if (!participantIds.includes(req.user.id)) {
+        participantIds.push(req.user.id);
+      }
+      
+      // Create the conversation
+      const conversation = await storage.createConversation({
+        title: title || "New Conversation",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        lastMessagePreview: ""
+      });
+      
+      // Add all participants to the conversation
+      for (const participantId of participantIds) {
+        await storage.addUserToConversation(conversation.id, participantId);
+      }
+      
+      // Get the full conversation with participants
+      const fullConversation = await storage.getConversation(conversation.id);
+      
+      // Get all participants for this conversation
+      const participants = await Promise.all(
+        participantIds.map(async (id) => {
+          const user = await storage.getUser(id);
+          if (!user) return null;
+          
+          return {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role
+          };
+        })
+      );
+      
+      // Add participants to the conversation response
+      const conversationWithParticipants = {
+        ...fullConversation,
+        participants: participants.filter(Boolean)
+      };
+      
+      res.status(201).json(conversationWithParticipants);
+    } catch (error) {
+      console.error("Create conversation error:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
 // Messages routes
   app.post("/api/messages", validateSession, async (req, res) => {
