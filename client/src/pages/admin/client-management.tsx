@@ -298,12 +298,15 @@ export default function ClientManagement() {
 
   return (
     <div className="container mx-auto py-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">Manage The Fans - Client Management</h1>
+        <p className="text-gray-500 mb-4">Unified dashboard for managing all your clients and users in one place.</p>
+      </div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Client Management</h1>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCcw className="h-4 w-4 mr-2" />
-            Refresh
+            Refresh Data
           </Button>
           <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
             <DialogTrigger asChild>

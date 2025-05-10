@@ -201,14 +201,14 @@ export function Sidebar({
       <div className="p-4 border-t border-gray-800">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-            {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "A"}
+            <span className="font-semibold">MTF</span>
           </div>
           <div>
             <h4 className="text-sm font-medium text-white">
-              {user?.fullName || "Admin User"}
+              Manage The Fans
             </h4>
             <p className="text-xs text-gray-400">
-              {user && user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Admin"}
+              {user && user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Admin"} Portal
             </p>
           </div>
         </div>
