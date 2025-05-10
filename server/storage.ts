@@ -1047,7 +1047,7 @@ export class MemStorage implements IStorage {
 }
 
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, or, desc } from 'drizzle-orm';
 import db from './db';
 
 // PostgreSQL storage implementation
@@ -1403,38 +1403,113 @@ export class PgStorage implements IStorage {
   
   // Appointment methods
   async getAppointment(id: number): Promise<Appointment | undefined> {
-    console.warn('Using fallback for getAppointment');
-    return this.memStorage.getAppointment(id);
+    try {
+      const result = await this.db.select().from(appointments).where(eq(appointments.id, id));
+      return result.length > 0 ? result[0] : undefined;
+    } catch (error) {
+      console.error('Error getting appointment:', error);
+      return this.memStorage.getAppointment(id);
+    }
   }
   
   async getAppointmentsByUserId(userId: number): Promise<Appointment[]> {
-    console.warn('Using fallback for getAppointmentsByUserId');
-    return this.memStorage.getAppointmentsByUserId(userId);
+    try {
+      const result = await this.db.select().from(appointments)
+        .where(or(
+          eq(appointments.adminId, userId),
+          eq(appointments.clientId, userId)
+        ));
+      return result;
+    } catch (error) {
+      console.error('Error getting appointments by user ID:', error);
+      return this.memStorage.getAppointmentsByUserId(userId);
+    }
   }
   
   async getAppointmentWithClient(id: number): Promise<(Appointment & { client?: User }) | undefined> {
-    console.warn('Using fallback for getAppointmentWithClient');
-    return this.memStorage.getAppointmentWithClient(id);
+    try {
+      // Get the appointment
+      const appointment = await this.getAppointment(id);
+      if (!appointment) {
+        return undefined;
+      }
+      
+      // Get the client information
+      const client = await this.getUser(appointment.clientId);
+      
+      // Return the combined result
+      return {
+        ...appointment,
+        client
+      };
+    } catch (error) {
+      console.error('Error getting appointment with client:', error);
+      return this.memStorage.getAppointmentWithClient(id);
+    }
   }
   
   async getAppointmentsByAdminId(adminId: number): Promise<Appointment[]> {
-    console.warn('Using fallback for getAppointmentsByAdminId');
-    return this.memStorage.getAppointmentsByAdminId(adminId);
+    try {
+      const result = await this.db.select().from(appointments)
+        .where(eq(appointments.adminId, adminId))
+        .orderBy(desc(appointments.appointmentDate));
+      return result;
+    } catch (error) {
+      console.error('Error getting appointments by admin ID:', error);
+      return this.memStorage.getAppointmentsByAdminId(adminId);
+    }
   }
   
   async getAppointmentsByClientId(clientId: number): Promise<Appointment[]> {
-    console.warn('Using fallback for getAppointmentsByClientId');
-    return this.memStorage.getAppointmentsByClientId(clientId);
+    try {
+      const result = await this.db.select().from(appointments)
+        .where(eq(appointments.clientId, clientId))
+        .orderBy(desc(appointments.appointmentDate));
+      return result;
+    } catch (error) {
+      console.error('Error getting appointments by client ID:', error);
+      return this.memStorage.getAppointmentsByClientId(clientId);
+    }
   }
   
   async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
-    console.warn('Using fallback for createAppointment');
-    return this.memStorage.createAppointment(appointment);
+    try {
+      // Insert the appointment into the database
+      const result = await this.db.insert(appointments)
+        .values({
+          ...appointment,
+          status: "pending",
+          notificationSent: false,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      console.log('Created appointment in database:', result[0].id);
+      return result[0];
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      return this.memStorage.createAppointment(appointment);
+    }
   }
   
   async updateAppointment(id: number, appointmentData: Partial<Appointment>): Promise<Appointment> {
-    console.warn('Using fallback for updateAppointment');
-    return this.memStorage.updateAppointment(id, appointmentData);
+    try {
+      const result = await this.db.update(appointments)
+        .set({ ...appointmentData, updatedAt: new Date() })
+        .where(eq(appointments.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        throw new Error(`Appointment with ID ${id} not found`);
+      }
+      
+      console.log('Updated appointment in database:', id);
+      return result[0];
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      return this.memStorage.updateAppointment(id, appointmentData);
+    }
   }
   
   async sendEmail(to: string, subject: string, content: string, html?: string): Promise<boolean> {
