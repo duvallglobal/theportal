@@ -27,7 +27,7 @@ export default function ClientDetails() {
     isLoading: clientLoading,
     error: clientError,
   } = useQuery<User>({
-    queryKey: [`/api/admin/users/${clientId}`],
+    queryKey: [`/api/admin/clients/${clientId}`],
     enabled: !!clientId,
   });
 
@@ -52,11 +52,11 @@ export default function ClientDetails() {
   // Mutations
   const updateClientMutation = useMutation({
     mutationFn: async (clientData: Partial<User>) => {
-      const res = await apiRequest("PATCH", `/api/admin/users/${clientId}`, clientData);
+      const res = await apiRequest("PATCH", `/api/admin/clients/${clientId}`, clientData);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/admin/users/${clientId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/clients/${clientId}`] });
       toast({
         title: "Client updated",
         description: "Client details have been updated successfully.",
