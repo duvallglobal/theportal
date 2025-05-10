@@ -238,6 +238,12 @@ function Router() {
         </SidebarLayout>
       )} />
       
+      <AdminRoute path="/admin/clients/:id" component={() => (
+        <SidebarLayout>
+          <UserDetails />
+        </SidebarLayout>
+      )} />
+      
       <AdminRoute path="/admin/templates" component={() => (
         <SidebarLayout>
           <TemplateManagement />

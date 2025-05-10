@@ -368,7 +368,7 @@ export function AppointmentDetailView({
                 <Button
                   variant="outline"
                   className="w-full justify-start"
-                  onClick={() => window.open(`/admin/client/${appointment.client?.id}`, '_blank')}
+                  onClick={() => window.open(`/admin/clients/${appointment.client?.id}`, '_blank')}
                 >
                   <User className="mr-2 h-4 w-4" />
                   View Client Profile
