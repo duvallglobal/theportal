@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,14 +16,12 @@ import {
   DialogDescription, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+  DialogTitle 
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CommunicationTemplate } from "@shared/schema";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function TemplateManagement() {
   const { toast } = useToast();
@@ -44,19 +42,8 @@ export default function TemplateManagement() {
   });
 
   // Fetch templates
-  const { data: templates = [], isLoading } = useQuery<CommunicationTemplate[]>({
-    queryKey: ["/api/communication-templates"],
-    onSuccess: (data) => {
-      console.log("Loaded templates:", data);
-    },
-    onError: (error) => {
-      console.error("Error loading templates:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load communication templates",
-        variant: "destructive"
-      });
-    }
+  const { data: templates = [], isLoading } = useQuery({
+    queryKey: ["/api/communication-templates"]
   });
 
   // Mutations
@@ -74,8 +61,7 @@ export default function TemplateManagement() {
       resetForm();
       setIsDialogOpen(false);
     },
-    onError: (error: any) => {
-      console.error("Error creating template:", error);
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to create communication template",
@@ -98,8 +84,7 @@ export default function TemplateManagement() {
       resetForm();
       setIsDialogOpen(false);
     },
-    onError: (error: any) => {
-      console.error("Error updating template:", error);
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to update communication template",
@@ -120,8 +105,7 @@ export default function TemplateManagement() {
         description: "Communication template deleted successfully",
       });
     },
-    onError: (error: any) => {
-      console.error("Error deleting template:", error);
+    onError: () => {
       toast({
         title: "Error",
         description: "Failed to delete communication template",
@@ -198,8 +182,8 @@ export default function TemplateManagement() {
     }
   };
 
-  // Filter templates based on selected tab and search term
-  const filteredTemplates = templates.filter(template => {
+  // Filter templates
+  const filteredTemplates = templates.filter((template: any) => {
     const matchesTab = selectedTab === "all" || template.type === selectedTab;
     const matchesSearch = 
       searchTerm === "" || 
@@ -237,7 +221,7 @@ export default function TemplateManagement() {
 
       <div className="flex flex-col space-y-4">
         <div className="flex justify-between">
-          <Tabs defaultValue="all" className="w-full" value={selectedTab} onValueChange={handleTabChange}>
+          <Tabs className="w-full" value={selectedTab} onValueChange={handleTabChange}>
             <TabsList>
               <TabsTrigger value="all">All Templates</TabsTrigger>
               <TabsTrigger value="email" className="flex items-center">
@@ -298,7 +282,7 @@ export default function TemplateManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTemplates.map((template) => (
+                    {filteredTemplates.map((template: any) => (
                       <TableRow key={template.id}>
                         <TableCell className="font-medium">{template.name}</TableCell>
                         <TableCell>
@@ -320,7 +304,7 @@ export default function TemplateManagement() {
                         </TableCell>
                         <TableCell>
                           {template.isDefault && (
-                            <Badge variant="success" className="bg-green-100 text-green-800">
+                            <Badge variant="outline" className="bg-green-100 text-green-800">
                               <CheckCircle className="mr-1 h-3 w-3" />
                               Default
                             </Badge>
@@ -439,20 +423,14 @@ export default function TemplateManagement() {
                 <Textarea
                   id="content"
                   name="content"
-                  placeholder={
-                    formData.type === "email"
-                      ? "Hi {{name}},\n\nThank you for booking an appointment..."
-                      : formData.type === "sms"
-                      ? "Your appointment is confirmed for {{date}} at {{time}}. Reply YES to confirm or call {{phone}} to reschedule."
-                      : "{{name}} has booked an appointment for {{date}}."
-                  }
+                  placeholder="Template content with variables like {{name}}"
                   className="min-h-32"
                   required
                   value={formData.content}
                   onChange={handleFormChange}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use variables like {{name}}, {{date}}, {{time}} that will be replaced with actual values.
+                  Use variables like &#123;&#123;name&#125;&#125;, &#123;&#123;appointmentDate&#125;&#125;, &#123;&#123;time&#125;&#125; that will be replaced with actual values.
                 </p>
               </div>
 
