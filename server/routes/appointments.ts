@@ -110,9 +110,8 @@ router.post("/:id/notification", async (req: Request, res: Response) => {
           recipientId: appointment.clientId,
           senderId: appointment.adminId,
           content: smsMessage,
-          type: "appointment",
+          type: "sms",
           status: "sent",
-          sentAt: new Date(),
         });
       }
     }
@@ -146,10 +145,11 @@ router.post("/:id/notification", async (req: Request, res: Response) => {
         
         // Log notification to communication history
         await storage.createCommunicationHistory({
-          userId: appointment.clientId,
+          recipientId: appointment.clientId,
+          senderId: appointment.adminId,
           content: message || `Email notification for appointment on ${formattedDate}`,
-          type: "appointment", 
-          deliveryMethod: "email",
+          type: "email",
+          status: "sent",
         });
       }
     }
