@@ -73,7 +73,7 @@ export interface IStorage {
   getAppointmentsByClientId(clientId: number): Promise<Appointment[]>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointmentData: Partial<Appointment>): Promise<Appointment>;
-  sendEmail(to: string, subject: string, content: string): Promise<boolean>;
+  sendEmail(to: string, subject: string, content: string, html?: string): Promise<boolean>;
   
   // Message methods
   getMessage(id: number): Promise<Message | undefined>;
@@ -979,6 +979,18 @@ export class MemStorage implements IStorage {
     return Array.from(this.communicationTemplatesMap.values());
   }
   
+  // Email methods
+  async sendEmail(to: string, subject: string, content: string, html?: string): Promise<boolean> {
+    try {
+      // Use the sendEmail utility from utils/email.ts
+      const { sendEmail } = await import('./utils/email');
+      return await sendEmail(to, subject, content, html);
+    } catch (error) {
+      console.error("Error sending email from storage:", error);
+      return false;
+    }
+  }
+
   // Communication History methods
   async getCommunicationHistory(id: number): Promise<CommunicationHistory | undefined> {
     return this.communicationHistoryMap.get(id);
