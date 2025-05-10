@@ -20,7 +20,10 @@ type AuthContextType = {
   register: (fullName: string, email: string, password: string) => Promise<SelectUser>;
 };
 
-type LoginData = Pick<InsertUser, "email" | "password">;
+interface LoginData {
+  email: string; // Used for both email and username
+  password: string;
+}
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,6 +39,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
+      // The server expects the email field to be used for both email and username login
+      // We're keeping the parameter name as 'email' to maintain consistency with the form
       const res = await apiRequest("POST", "/api/auth/login", credentials);
       if (!res.ok) {
         const errorData = await res.json();
