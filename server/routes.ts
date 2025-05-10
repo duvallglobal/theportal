@@ -1978,10 +1978,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/users", validateSession, validateAdmin, async (req, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json(users);
+      
+      // Remove sensitive data from response
+      const sanitizedUsers = users.map(user => {
+        const { password, ...userWithoutPassword } = user;
+        return userWithoutPassword;
+      });
+      
+      res.json(sanitizedUsers);
     } catch (error) {
       console.error("Error fetching users:", error);
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+  
+  // Client terminology version of the admin users route
+  app.get("/api/admin/clients", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const clients = await storage.getAllUsers();
+      
+      // Remove sensitive data from response
+      const sanitizedClients = clients.map(client => {
+        const { password, ...clientWithoutPassword } = client;
+        return clientWithoutPassword;
+      });
+      
+      res.json(sanitizedClients);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+      res.status(500).json({ message: "Failed to fetch clients" });
     }
   });
   
@@ -2001,6 +2026,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+  
+  // Client terminology version of getting a user by ID
+  app.get("/api/admin/clients/:id", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      const client = await storage.getUser(clientId);
+      
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      // Remove sensitive data from response
+      const { password, ...clientWithoutPassword } = client;
+      
+      res.json(clientWithoutPassword);
+    } catch (error) {
+      console.error("Error fetching client:", error);
+      res.status(500).json({ message: "Failed to fetch client" });
     }
   });
   
