@@ -483,6 +483,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete user" });
     }
   });
+  
+  // Client terminology version of deleting a user
+  app.delete("/api/clients/:id", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      
+      // Verify client exists
+      const client = await storage.getUser(clientId);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      // Don't allow deleting the main admin account
+      if (client.username === "admin") {
+        return res.status(403).json({ message: "Cannot delete the main admin account" });
+      }
+      
+      // Verify the user being deleted is actually a client
+      if (client.role !== "client") {
+        return res.status(400).json({ message: "Can only delete clients with this endpoint" });
+      }
+      
+      // Delete client
+      await storage.deleteUser(clientId);
+      
+      res.json({ success: true, message: "Client deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting client:", error);
+      res.status(500).json({ message: "Failed to delete client" });
+    }
+  });
 
   // Profile routes
   app.get("/api/profile", validateSession, async (req, res) => {

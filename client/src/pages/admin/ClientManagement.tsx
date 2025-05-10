@@ -65,7 +65,7 @@ export default function ClientManagement() {
   
   // Fetch clients data
   const { data: clients = [], isLoading, error } = useQuery<ClientType[]>({
-    queryKey: ['/api/admin/users'],
+    queryKey: ['/api/admin/clients'],
   });
 
   // Handle client actions
