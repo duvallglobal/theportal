@@ -48,13 +48,13 @@ export default function Login() {
     setIsLoading(true);
     
     try {
-      await login(values.email, values.password);
+      await login(values.username, values.password);
       navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
       toast({
         title: "Login failed",
-        description: "Invalid email or password. Please try again.",
+        description: "Invalid username/email or password. Please try again.",
         variant: "destructive",
       });
     } finally {
