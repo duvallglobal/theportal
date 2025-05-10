@@ -27,14 +27,14 @@ async function testAuth() {
     console.log('Successfully connected to database');
 
     // Check if admin user exists
-    const checkResult = await client.query('SELECT * FROM "user" WHERE username = $1', ['admin']);
+    const checkResult = await client.query('SELECT * FROM "users" WHERE username = $1', ['admin']);
     
     if (checkResult.rowCount === 0) {
       console.log('Creating admin user...');
       const hashedPassword = await hashPassword('secret');
       
       const insertResult = await client.query(
-        `INSERT INTO "user" (
+        `INSERT INTO "users" (
           username, 
           email, 
           password, 
@@ -76,14 +76,14 @@ async function testAuth() {
     }
 
     // Create a test client user
-    const checkClientResult = await client.query('SELECT * FROM "user" WHERE username = $1', ['testclient']);
+    const checkClientResult = await client.query('SELECT * FROM "users" WHERE username = $1', ['testclient']);
     
     if (checkClientResult.rowCount === 0) {
       console.log('Creating test client user...');
       const hashedPassword = await hashPassword('testpassword');
       
       const insertResult = await client.query(
-        `INSERT INTO "user" (
+        `INSERT INTO "users" (
           username, 
           email, 
           password, 

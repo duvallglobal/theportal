@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from './StepIndicator';
 import { DocumentUploader } from './DocumentUploader';
