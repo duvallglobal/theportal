@@ -24,7 +24,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CommunicationTemplate } from "@shared/schema";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from "date-fns";
 
 export default function TemplateManagement() {
   const { toast } = useToast();
