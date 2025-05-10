@@ -62,6 +62,7 @@ export interface IStorage {
   // Subscription methods
   getSubscription(id: number): Promise<Subscription | undefined>;
   getSubscriptionByUserId(userId: number): Promise<Subscription | undefined>;
+  getSubscriptionsByUserId(userId: number): Promise<Subscription[]>;
   createSubscription(subscription: InsertSubscription): Promise<Subscription>;
   updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription>;
   
@@ -78,6 +79,7 @@ export interface IStorage {
   // Message methods
   getMessage(id: number): Promise<Message | undefined>;
   getMessagesByConversationId(conversationId: number): Promise<Message[]>;
+  getMessagesByUser(userId: number): Promise<Message[]>;
   createMessage(message: InsertMessage): Promise<Message>;
   markMessageAsRead(id: number): Promise<void>;
   
@@ -561,6 +563,12 @@ export class MemStorage implements IStorage {
       (subscription) => subscription.userId === userId
     );
   }
+  
+  async getSubscriptionsByUserId(userId: number): Promise<Subscription[]> {
+    return Array.from(this.subscriptionsMap.values()).filter(
+      (subscription) => subscription.userId === userId
+    );
+  }
 
   async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
     const id = this.currentIds.subscriptions++;
@@ -685,6 +693,12 @@ export class MemStorage implements IStorage {
   async getMessagesByConversationId(conversationId: number): Promise<Message[]> {
     return Array.from(this.messagesMap.values()).filter(
       (message) => message.conversationId === conversationId
+    );
+  }
+  
+  async getMessagesByUser(userId: number): Promise<Message[]> {
+    return Array.from(this.messagesMap.values()).filter(
+      (message) => message.senderId === userId
     );
   }
 
