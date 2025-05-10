@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { SidebarLayout } from '@/components/layouts/SidebarLayout';
 import { ConversationsList } from '@/components/messaging/ConversationsList';
 import { ChatInterface } from '@/components/messaging/ChatInterface';
 import { useAuth } from '@/hooks/use-auth';
@@ -61,7 +60,6 @@ export default function Messages() {
   };
 
   return (
-    <SidebarLayout>
       <div className="container px-4 py-6">
         <h1 className="text-2xl font-bold mb-6">Messages</h1>
         
@@ -138,6 +136,5 @@ export default function Messages() {
           </CardContent>
         </Card>
       </div>
-    </SidebarLayout>
   );
 }
