@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { UserInfo } from "@/lib/types";
 import {
@@ -20,6 +21,7 @@ import {
 } from "lucide-react";
 // We'll replace Clerk's UserButton with our own user dropdown
 import { ChevronDown } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface SidebarProps {
   id?: string;
@@ -39,6 +41,15 @@ export function Sidebar({
   isAdmin,
 }: SidebarProps) {
   const [location] = useLocation();
+  
+  // Fetch notifications to get unread count
+  const { data: notifications } = useQuery({
+    queryKey: ['/api/notifications'],
+    enabled: !!user, // Only fetch when user is logged in
+  });
+  
+  // Count unread notifications
+  const unreadCount = notifications ? notifications.filter((n: any) => !n.isRead).length : 0;
 
   // Define admin navigation items
   const adminNavItems = [
@@ -76,7 +87,7 @@ export function Sidebar({
       name: "Messaging",
       path: "/admin/messaging",
       icon: <MessageSquare className="w-5 h-5 mr-3" />,
-      badge: 3,
+      badge: unreadCount > 0 ? unreadCount : undefined,
     },
     {
       name: "Communication Templates",
@@ -136,7 +147,7 @@ export function Sidebar({
       name: "Messaging",
       path: "/messages",
       icon: <MessageSquare className="w-5 h-5 mr-3" />,
-      badge: 3,
+      badge: unreadCount > 0 ? unreadCount : undefined,
     },
     {
       name: "Rent.Men Concierge",
