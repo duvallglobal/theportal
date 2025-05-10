@@ -1027,4 +1027,562 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { eq, and } from 'drizzle-orm';
+import db from './db';
+
+// PostgreSQL storage implementation
+export class PgStorage implements IStorage {
+  private db: ReturnType<typeof drizzle>;
+
+  constructor() {
+    this.db = drizzle(db);
+    console.log('PostgreSQL storage initialized');
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    try {
+      const result = await this.db.select().from(users).where(eq(users.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching user by ID:', error);
+      return undefined;
+    }
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    try {
+      const result = await this.db.select().from(users).where(eq(users.username, username));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching user by username:', error);
+      return undefined;
+    }
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    try {
+      const result = await this.db.select().from(users).where(eq(users.email, email));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      return undefined;
+    }
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    try {
+      const result = await this.db.insert(users).values(user).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  }
+
+  async updateUser(id: number, userData: Partial<User>): Promise<User> {
+    try {
+      const result = await this.db.update(users)
+        .set({ ...userData, updatedAt: new Date() })
+        .where(eq(users.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    try {
+      return await this.db.select().from(users);
+    } catch (error) {
+      console.error('Error fetching all users:', error);
+      return [];
+    }
+  }
+
+  // Profile methods
+  async getProfile(id: number): Promise<Profile | undefined> {
+    try {
+      const result = await this.db.select().from(profiles).where(eq(profiles.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching profile by ID:', error);
+      return undefined;
+    }
+  }
+
+  async getProfileByUserId(userId: number): Promise<Profile | undefined> {
+    try {
+      const result = await this.db.select().from(profiles).where(eq(profiles.userId, userId));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching profile by user ID:', error);
+      return undefined;
+    }
+  }
+
+  async createProfile(profile: InsertProfile): Promise<Profile> {
+    try {
+      const result = await this.db.insert(profiles).values(profile).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      throw error;
+    }
+  }
+
+  async updateProfile(id: number, profileData: Partial<Profile>): Promise<Profile> {
+    try {
+      const result = await this.db.update(profiles)
+        .set(profileData)
+        .where(eq(profiles.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  }
+
+  // Platform account methods
+  async getPlatformAccount(id: number): Promise<PlatformAccount | undefined> {
+    try {
+      const result = await this.db.select().from(platformAccounts).where(eq(platformAccounts.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching platform account by ID:', error);
+      return undefined;
+    }
+  }
+
+  async getPlatformAccountByUserIdAndType(userId: number, platformType: string): Promise<PlatformAccount | undefined> {
+    try {
+      const result = await this.db.select().from(platformAccounts).where(
+        and(
+          eq(platformAccounts.userId, userId),
+          eq(platformAccounts.platformType, platformType)
+        )
+      );
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching platform account by user ID and type:', error);
+      return undefined;
+    }
+  }
+
+  async getPlatformAccountsByUserId(userId: number): Promise<PlatformAccount[]> {
+    try {
+      return await this.db.select().from(platformAccounts).where(eq(platformAccounts.userId, userId));
+    } catch (error) {
+      console.error('Error fetching platform accounts by user ID:', error);
+      return [];
+    }
+  }
+
+  async createPlatformAccount(account: InsertPlatformAccount): Promise<PlatformAccount> {
+    try {
+      const result = await this.db.insert(platformAccounts).values(account).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating platform account:', error);
+      throw error;
+    }
+  }
+
+  async updatePlatformAccount(id: number, accountData: Partial<PlatformAccount>): Promise<PlatformAccount> {
+    try {
+      const result = await this.db.update(platformAccounts)
+        .set(accountData)
+        .where(eq(platformAccounts.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating platform account:', error);
+      throw error;
+    }
+  }
+
+  // Implement remaining methods with appropriate fallbacks for now
+  
+  // Content strategy methods
+  async getContentStrategy(id: number): Promise<ContentStrategy | undefined> {
+    try {
+      const result = await this.db.select().from(contentStrategies).where(eq(contentStrategies.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching content strategy:', error);
+      return undefined;
+    }
+  }
+  
+  async getContentStrategyByUserId(userId: number): Promise<ContentStrategy | undefined> {
+    try {
+      const result = await this.db.select().from(contentStrategies).where(eq(contentStrategies.userId, userId));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching content strategy by user ID:', error);
+      return undefined;
+    }
+  }
+  
+  async createContentStrategy(strategy: InsertContentStrategy): Promise<ContentStrategy> {
+    try {
+      const result = await this.db.insert(contentStrategies).values(strategy).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating content strategy:', error);
+      throw error;
+    }
+  }
+  
+  async updateContentStrategy(id: number, strategyData: Partial<ContentStrategy>): Promise<ContentStrategy> {
+    try {
+      const result = await this.db.update(contentStrategies)
+        .set({ ...strategyData, updatedAt: new Date() })
+        .where(eq(contentStrategies.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating content strategy:', error);
+      throw error;
+    }
+  }
+
+  // Media file methods
+  async getMediaFile(id: number): Promise<MediaFile | undefined> {
+    try {
+      const result = await this.db.select().from(mediaFiles).where(eq(mediaFiles.id, id));
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching media file:', error);
+      return undefined;
+    }
+  }
+  
+  async getMediaFilesByUserId(userId: number): Promise<MediaFile[]> {
+    try {
+      return await this.db.select().from(mediaFiles).where(eq(mediaFiles.userId, userId));
+    } catch (error) {
+      console.error('Error fetching media files by user ID:', error);
+      return [];
+    }
+  }
+  
+  async createMediaFile(file: InsertMediaFile): Promise<MediaFile> {
+    try {
+      const result = await this.db.insert(mediaFiles).values(file).returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating media file:', error);
+      throw error;
+    }
+  }
+  
+  async updateMediaFile(id: number, fileData: Partial<MediaFile>): Promise<MediaFile> {
+    try {
+      const result = await this.db.update(mediaFiles)
+        .set(fileData)
+        .where(eq(mediaFiles.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating media file:', error);
+      throw error;
+    }
+  }
+  
+  async deleteMediaFile(id: number): Promise<void> {
+    try {
+      await this.db.delete(mediaFiles).where(eq(mediaFiles.id, id));
+    } catch (error) {
+      console.error('Error deleting media file:', error);
+      throw error;
+    }
+  }
+
+  // Implement fallbacks for the remaining methods
+  // These will be implemented as needed for specific functionality
+  
+  // For now, the rest of the methods will just log a warning and use in-memory storage as fallback
+  
+  // Placeholder for fallback methods
+  private memStorage = new MemStorage();
+  
+  // Verification document methods
+  async getVerificationDocument(id: number): Promise<VerificationDocument | undefined> {
+    console.warn('Using fallback for getVerificationDocument');
+    return this.memStorage.getVerificationDocument(id);
+  }
+  
+  async getVerificationDocumentsByUserId(userId: number): Promise<VerificationDocument[]> {
+    console.warn('Using fallback for getVerificationDocumentsByUserId');
+    return this.memStorage.getVerificationDocumentsByUserId(userId);
+  }
+  
+  async createVerificationDocument(document: InsertVerificationDocument): Promise<VerificationDocument> {
+    console.warn('Using fallback for createVerificationDocument');
+    return this.memStorage.createVerificationDocument(document);
+  }
+  
+  async updateVerificationDocument(id: number, documentData: Partial<VerificationDocument>): Promise<VerificationDocument> {
+    console.warn('Using fallback for updateVerificationDocument');
+    return this.memStorage.updateVerificationDocument(id, documentData);
+  }
+  
+  // Subscription methods
+  async getSubscription(id: number): Promise<Subscription | undefined> {
+    console.warn('Using fallback for getSubscription');
+    return this.memStorage.getSubscription(id);
+  }
+  
+  async getSubscriptionByUserId(userId: number): Promise<Subscription | undefined> {
+    console.warn('Using fallback for getSubscriptionByUserId');
+    return this.memStorage.getSubscriptionByUserId(userId);
+  }
+  
+  async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
+    console.warn('Using fallback for createSubscription');
+    return this.memStorage.createSubscription(subscription);
+  }
+  
+  async updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription> {
+    console.warn('Using fallback for updateSubscription');
+    return this.memStorage.updateSubscription(id, subscriptionData);
+  }
+  
+  // Appointment methods
+  async getAppointment(id: number): Promise<Appointment | undefined> {
+    console.warn('Using fallback for getAppointment');
+    return this.memStorage.getAppointment(id);
+  }
+  
+  async getAppointmentsByUserId(userId: number): Promise<Appointment[]> {
+    console.warn('Using fallback for getAppointmentsByUserId');
+    return this.memStorage.getAppointmentsByUserId(userId);
+  }
+  
+  async getAppointmentWithClient(id: number): Promise<(Appointment & { client?: User }) | undefined> {
+    console.warn('Using fallback for getAppointmentWithClient');
+    return this.memStorage.getAppointmentWithClient(id);
+  }
+  
+  async getAppointmentsByAdminId(adminId: number): Promise<Appointment[]> {
+    console.warn('Using fallback for getAppointmentsByAdminId');
+    return this.memStorage.getAppointmentsByAdminId(adminId);
+  }
+  
+  async getAppointmentsByClientId(clientId: number): Promise<Appointment[]> {
+    console.warn('Using fallback for getAppointmentsByClientId');
+    return this.memStorage.getAppointmentsByClientId(clientId);
+  }
+  
+  async createAppointment(appointment: InsertAppointment): Promise<Appointment> {
+    console.warn('Using fallback for createAppointment');
+    return this.memStorage.createAppointment(appointment);
+  }
+  
+  async updateAppointment(id: number, appointmentData: Partial<Appointment>): Promise<Appointment> {
+    console.warn('Using fallback for updateAppointment');
+    return this.memStorage.updateAppointment(id, appointmentData);
+  }
+  
+  async sendEmail(to: string, subject: string, content: string, html?: string): Promise<boolean> {
+    console.warn('Using fallback for sendEmail');
+    return this.memStorage.sendEmail(to, subject, content, html);
+  }
+  
+  // Message methods
+  async getMessage(id: number): Promise<Message | undefined> {
+    console.warn('Using fallback for getMessage');
+    return this.memStorage.getMessage(id);
+  }
+  
+  async getMessagesByConversationId(conversationId: number): Promise<Message[]> {
+    console.warn('Using fallback for getMessagesByConversationId');
+    return this.memStorage.getMessagesByConversationId(conversationId);
+  }
+  
+  async createMessage(message: InsertMessage): Promise<Message> {
+    console.warn('Using fallback for createMessage');
+    return this.memStorage.createMessage(message);
+  }
+  
+  async markMessageAsRead(id: number): Promise<void> {
+    console.warn('Using fallback for markMessageAsRead');
+    return this.memStorage.markMessageAsRead(id);
+  }
+  
+  // Conversation methods
+  async getConversation(id: number): Promise<Conversation | undefined> {
+    console.warn('Using fallback for getConversation');
+    return this.memStorage.getConversation(id);
+  }
+  
+  async getConversationsByUserId(userId: number): Promise<Conversation[]> {
+    console.warn('Using fallback for getConversationsByUserId');
+    return this.memStorage.getConversationsByUserId(userId);
+  }
+  
+  async createConversation(conversation: InsertConversation): Promise<Conversation> {
+    console.warn('Using fallback for createConversation');
+    return this.memStorage.createConversation(conversation);
+  }
+  
+  async updateConversation(id: number, conversationData: Partial<Conversation>): Promise<Conversation> {
+    console.warn('Using fallback for updateConversation');
+    return this.memStorage.updateConversation(id, conversationData);
+  }
+  
+  async addUserToConversation(conversationId: number, userId: number): Promise<void> {
+    console.warn('Using fallback for addUserToConversation');
+    return this.memStorage.addUserToConversation(conversationId, userId);
+  }
+  
+  async isUserInConversation(userId: number, conversationId: number): Promise<boolean> {
+    console.warn('Using fallback for isUserInConversation');
+    return this.memStorage.isUserInConversation(userId, conversationId);
+  }
+  
+  // Notification methods
+  async getNotification(id: number): Promise<Notification | undefined> {
+    console.warn('Using fallback for getNotification');
+    return this.memStorage.getNotification(id);
+  }
+  
+  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
+    console.warn('Using fallback for getNotificationsByUserId');
+    return this.memStorage.getNotificationsByUserId(userId);
+  }
+  
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    console.warn('Using fallback for createNotification');
+    return this.memStorage.createNotification(notification);
+  }
+  
+  async markNotificationAsRead(id: number): Promise<void> {
+    console.warn('Using fallback for markNotificationAsRead');
+    return this.memStorage.markNotificationAsRead(id);
+  }
+  
+  // RentMen settings methods
+  async getRentMenSettings(id: number): Promise<RentMenSettings | undefined> {
+    console.warn('Using fallback for getRentMenSettings');
+    return this.memStorage.getRentMenSettings(id);
+  }
+  
+  async getRentMenSettingsByUserId(userId: number): Promise<RentMenSettings | undefined> {
+    console.warn('Using fallback for getRentMenSettingsByUserId');
+    return this.memStorage.getRentMenSettingsByUserId(userId);
+  }
+  
+  async createRentMenSettings(settings: InsertRentMenSettings): Promise<RentMenSettings> {
+    console.warn('Using fallback for createRentMenSettings');
+    return this.memStorage.createRentMenSettings(settings);
+  }
+  
+  async updateRentMenSettings(id: number, settingsData: Partial<RentMenSettings>): Promise<RentMenSettings> {
+    console.warn('Using fallback for updateRentMenSettings');
+    return this.memStorage.updateRentMenSettings(id, settingsData);
+  }
+  
+  // Analytics methods
+  async getAnalytics(id: number): Promise<Analytics | undefined> {
+    console.warn('Using fallback for getAnalytics');
+    return this.memStorage.getAnalytics(id);
+  }
+  
+  async getAnalyticsByUserId(userId: number): Promise<Analytics[]> {
+    console.warn('Using fallback for getAnalyticsByUserId');
+    return this.memStorage.getAnalyticsByUserId(userId);
+  }
+  
+  async getLatestAnalyticsByUserId(userId: number): Promise<Analytics | undefined> {
+    console.warn('Using fallback for getLatestAnalyticsByUserId');
+    return this.memStorage.getLatestAnalyticsByUserId(userId);
+  }
+  
+  async createAnalytics(analytics: InsertAnalytics): Promise<Analytics> {
+    console.warn('Using fallback for createAnalytics');
+    return this.memStorage.createAnalytics(analytics);
+  }
+  
+  async updateAnalytics(id: number, analyticsData: Partial<Analytics>): Promise<Analytics> {
+    console.warn('Using fallback for updateAnalytics');
+    return this.memStorage.updateAnalytics(id, analyticsData);
+  }
+  
+  // Communication Template methods
+  async getCommunicationTemplate(id: number): Promise<CommunicationTemplate | undefined> {
+    console.warn('Using fallback for getCommunicationTemplate');
+    return this.memStorage.getCommunicationTemplate(id);
+  }
+  
+  async getCommunicationTemplatesByType(type: string): Promise<CommunicationTemplate[]> {
+    console.warn('Using fallback for getCommunicationTemplatesByType');
+    return this.memStorage.getCommunicationTemplatesByType(type);
+  }
+  
+  async getCommunicationTemplatesByCategory(category: string): Promise<CommunicationTemplate[]> {
+    console.warn('Using fallback for getCommunicationTemplatesByCategory');
+    return this.memStorage.getCommunicationTemplatesByCategory(category);
+  }
+  
+  async getDefaultCommunicationTemplate(type: string, category: string): Promise<CommunicationTemplate | undefined> {
+    console.warn('Using fallback for getDefaultCommunicationTemplate');
+    return this.memStorage.getDefaultCommunicationTemplate(type, category);
+  }
+  
+  async createCommunicationTemplate(template: InsertCommunicationTemplate): Promise<CommunicationTemplate> {
+    console.warn('Using fallback for createCommunicationTemplate');
+    return this.memStorage.createCommunicationTemplate(template);
+  }
+  
+  async updateCommunicationTemplate(id: number, templateData: Partial<CommunicationTemplate>): Promise<CommunicationTemplate> {
+    console.warn('Using fallback for updateCommunicationTemplate');
+    return this.memStorage.updateCommunicationTemplate(id, templateData);
+  }
+  
+  async deleteCommunicationTemplate(id: number): Promise<void> {
+    console.warn('Using fallback for deleteCommunicationTemplate');
+    return this.memStorage.deleteCommunicationTemplate(id);
+  }
+  
+  async getAllCommunicationTemplates(): Promise<CommunicationTemplate[]> {
+    console.warn('Using fallback for getAllCommunicationTemplates');
+    return this.memStorage.getAllCommunicationTemplates();
+  }
+  
+  // Communication History methods
+  async getCommunicationHistory(id: number): Promise<CommunicationHistory | undefined> {
+    console.warn('Using fallback for getCommunicationHistory');
+    return this.memStorage.getCommunicationHistory(id);
+  }
+  
+  async getCommunicationHistoryByRecipientId(recipientId: number): Promise<CommunicationHistory[]> {
+    console.warn('Using fallback for getCommunicationHistoryByRecipientId');
+    return this.memStorage.getCommunicationHistoryByRecipientId(recipientId);
+  }
+  
+  async getCommunicationHistoryBySenderId(senderId: number): Promise<CommunicationHistory[]> {
+    console.warn('Using fallback for getCommunicationHistoryBySenderId');
+    return this.memStorage.getCommunicationHistoryBySenderId(senderId);
+  }
+  
+  async getCommunicationHistoryByType(type: string): Promise<CommunicationHistory[]> {
+    console.warn('Using fallback for getCommunicationHistoryByType');
+    return this.memStorage.getCommunicationHistoryByType(type);
+  }
+  
+  async createCommunicationHistory(history: InsertCommunicationHistory): Promise<CommunicationHistory> {
+    console.warn('Using fallback for createCommunicationHistory');
+    return this.memStorage.createCommunicationHistory(history);
+  }
+}
+
+// Use PostgreSQL storage if DATABASE_URL is available, otherwise use in-memory storage
+export const storage = process.env.DATABASE_URL 
+  ? new PgStorage() 
+  : new MemStorage();
