@@ -9,14 +9,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
-import { MapPin, Clock, DollarSign, Clipboard, Check, AlertCircle, Calendar, Phone, Mail, MessageSquare, Users } from "lucide-react";
+import { MapPin, Clock, DollarSign, AlertCircle, Calendar, Phone, Mail, MessageSquare, Users } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { AppointmentDetailView } from "./AppointmentDetailView";
 
 interface AppointmentCardProps {
   appointment: {
@@ -224,130 +224,12 @@ export function AppointmentCard({ appointment, isAdmin = true }: AppointmentCard
         </CardFooter>
       </Card>
       
-      {/* Details Dialog */}
-      <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Appointment Details</DialogTitle>
-            <DialogDescription>
-              Comprehensive information about this appointment
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="font-semibold mb-2">Appointment Information</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{formattedDate}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>Duration: {appointment.duration} minutes</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>Location: {appointment.location}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  <span>Amount: ${appointment.amount}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
-                  <span>Status: {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                  <span>Notification: {formatNotificationMethod(appointment.notificationMethod)}</span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>Created: {format(new Date(appointment.createdAt), "PPP")}</span>
-                </div>
-              </div>
-              
-              {appointment.details && (
-                <div className="mt-4">
-                  <h3 className="font-semibold mb-2">Details</h3>
-                  <div className="p-4 bg-muted rounded-md">
-                    <p className="whitespace-pre-wrap">{appointment.details}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div>
-              {appointment.photoUrl && (
-                <div className="mb-4">
-                  <h3 className="font-semibold mb-2">Photo</h3>
-                  <div className="rounded-md overflow-hidden">
-                    <img 
-                      src={appointment.photoUrl} 
-                      alt="Appointment photo" 
-                      className="w-full h-auto object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {appointment.client && (
-                <div className="mb-4">
-                  <h3 className="font-semibold mb-2">Client Information</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>Name: {appointment.client.fullName}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span>Username: {appointment.client.username}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>Email: {appointment.client.email}</span>
-                    </div>
-                    
-                    {appointment.client.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-muted-foreground" />
-                        <span>Phone: {appointment.client.phone}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <DialogFooter className="flex justify-end gap-2 mt-4">
-            {isAdmin && ["pending", "approved"].includes(appointment.status) && (
-              <Button 
-                variant="destructive" 
-                onClick={() => {
-                  setShowDetails(false);
-                  setShowCancelDialog(true);
-                }}
-              >
-                Cancel Appointment
-              </Button>
-            )}
-            
-            <Button variant="outline" onClick={() => setShowDetails(false)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Detailed Appointment View */}
+      <AppointmentDetailView 
+        appointment={appointment}
+        isOpen={showDetails}
+        onClose={() => setShowDetails(false)}
+      />
       
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
