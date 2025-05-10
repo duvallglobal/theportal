@@ -165,7 +165,7 @@ export default function AdminDashboard() {
                             </td>
                             <td className="p-2">{user.plan || "None"}</td>
                             <td className="p-2">
-                              <Link href={`/admin/users/${user.id}`}>
+                              <Link href={`/admin/clients/${user.id}`}>
                                 <Button variant="outline" size="sm">
                                   Manage
                                 </Button>
