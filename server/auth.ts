@@ -73,7 +73,8 @@ export function setupAuth(app: Express) {
     resave: false, // False to prevent unnecessary writes
     saveUninitialized: false, // False to comply with regulations and prevent session flooding
     cookie: {
-      secure: process.env.NODE_ENV === "production", // Only use secure in production
+      // Set secure to false in all environments since we use HTTP in development
+      secure: false,
       maxAge: 30 * 24 * 60 * 60 * 1000, // Extended to 30 days for better persistence
       httpOnly: true,
       sameSite: 'lax',
