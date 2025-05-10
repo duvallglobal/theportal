@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import { insertUserSchema, insertProfileSchema, insertPlatformAccountSchema, insertContentStrategySchema, insertMediaFileSchema, insertVerificationDocumentSchema, insertAppointmentSchema, insertMessageSchema, insertRentMenSettingsSchema, insertAnalyticsSchema, insertCommunicationTemplateSchema, insertCommunicationHistorySchema } from "@shared/schema";
 import { z } from "zod";
 import Stripe from "stripe";
@@ -283,8 +283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Email already exists" });
       }
       
-      // Hash password
-      const hashedPassword = await authMiddleware.hashPassword(req.body.password);
+      // Hash password - use the exported function from auth.ts
+      const hashedPassword = await hashPassword(req.body.password);
       
       // Create new user
       const newUser = await storage.createUser({
