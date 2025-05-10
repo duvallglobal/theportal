@@ -745,10 +745,37 @@ export class MemStorage implements IStorage {
       (participant) => participant.userId === userId
     );
     
-    // Get conversations by IDs
-    return participantData.map(
-      (participant) => this.conversationsMap.get(participant.conversationId)
-    ).filter(Boolean) as Conversation[];
+    // Get conversations by IDs with participants
+    return Promise.all(participantData.map(async (participant) => {
+      const conversation = this.conversationsMap.get(participant.conversationId);
+      if (!conversation) return null;
+      
+      // Find all participants for this conversation
+      const allParticipants = Array.from(this.conversationParticipantsMap.values())
+        .filter(p => p.conversationId === conversation.id);
+      
+      // Get user data for each participant
+      const participantUsers = await Promise.all(
+        allParticipants.map(async (p) => {
+          const user = await this.getUser(p.userId);
+          if (!user) return null;
+          
+          return {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            email: user.email,
+            role: user.role
+          };
+        })
+      );
+      
+      // Filter out null users and add participants to conversation
+      return {
+        ...conversation,
+        participants: participantUsers.filter(Boolean)
+      };
+    })).then(results => results.filter(Boolean) as Conversation[]);
   }
 
   async createConversation(conversation: InsertConversation): Promise<Conversation> {
@@ -1611,7 +1638,37 @@ export class PgStorage implements IStorage {
         .from(conversations)
         .where(inArray(conversations.id, conversationIds));
       
-      return result;
+      // For each conversation, get all participants
+      const conversationsWithParticipants = await Promise.all(
+        result.map(async (conversation) => {
+          // Find all participants for this conversation
+          const participants = await this.db
+            .select({
+              conversationParticipant: conversationParticipants,
+              user: users
+            })
+            .from(conversationParticipants)
+            .innerJoin(users, eq(conversationParticipants.userId, users.id))
+            .where(eq(conversationParticipants.conversationId, conversation.id));
+          
+          // Extract user information from participants
+          const participantUsers = participants.map(p => ({
+            id: p.user.id,
+            username: p.user.username,
+            fullName: p.user.fullName,
+            email: p.user.email,
+            role: p.user.role
+          }));
+          
+          // Return the conversation with participants
+          return {
+            ...conversation,
+            participants: participantUsers
+          };
+        })
+      );
+      
+      return conversationsWithParticipants;
     } catch (error) {
       console.error('Error getting conversations by user ID:', error);
       return this.memStorage.getConversationsByUserId(userId);
