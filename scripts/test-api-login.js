@@ -1,8 +1,10 @@
 import fetch from 'node-fetch';
 
 async function testLogin() {
+  console.log('Testing login with admin credentials...');
+
   try {
-    console.log('Testing admin login...');
+    // Test admin login
     const adminLoginResponse = await fetch('http://localhost:5000/api/auth/login', {
       method: 'POST',
       headers: {
@@ -13,15 +15,13 @@ async function testLogin() {
         password: 'secret',
       }),
     });
-    
-    if (adminLoginResponse.ok) {
-      const adminData = await adminLoginResponse.json();
-      console.log('Admin login successful:', adminData);
-    } else {
-      console.error('Admin login failed:', await adminLoginResponse.text());
-    }
-    
-    console.log('\nTesting client login...');
+
+    const adminResult = await adminLoginResponse.json();
+    console.log(`Admin login status: ${adminLoginResponse.status}`);
+    console.log('Admin login response:', adminResult);
+
+    // Test client login
+    console.log('\nTesting login with client credentials...');
     const clientLoginResponse = await fetch('http://localhost:5000/api/auth/login', {
       method: 'POST',
       headers: {
@@ -32,16 +32,13 @@ async function testLogin() {
         password: 'password123',
       }),
     });
-    
-    if (clientLoginResponse.ok) {
-      const clientData = await clientLoginResponse.json();
-      console.log('Client login successful:', clientData);
-    } else {
-      console.error('Client login failed:', await clientLoginResponse.text());
-    }
-    
+
+    const clientResult = await clientLoginResponse.json();
+    console.log(`Client login status: ${clientLoginResponse.status}`);
+    console.log('Client login response:', clientResult);
+
   } catch (error) {
-    console.error('Error testing login:', error);
+    console.error('Error during login test:', error);
   }
 }
 
