@@ -1,10 +1,12 @@
 {
-  "projectId": "prj_Jpkf33me9LQ2sA97ODimzUyj1o78", 
-  "orgId": "team_yTq020RZZc3Id9dDpHw2KPdP", 
+  "projectId": "prj_Jpkf33me9LQ2sA97ODimzUyj1o78",
+  "orgId": "team_yTq020RZZc3Id9dDpHw2KPdP",
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist/public",
   "build": {
     "env": {
       "NODE_ENV": "production"
     }
-  },
-    "outputDirectory": "dist/public"
   }
+}
