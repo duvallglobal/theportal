@@ -149,13 +149,17 @@ router.post("/:id/notification", async (req: Request, res: Response) => {
         notificationSent = true;
         
         // Log notification to communication history
-        await storage.createCommunicationHistory({
+        const emailHistoryData: InsertCommunicationHistory = {
           recipientId: appointment.clientId,
           senderId: appointment.adminId,
           content: message || `Email notification for appointment on ${formattedDate}`,
           type: "email",
           status: "sent",
-        });
+          statusMessage: null,
+          subject: "Appointment Notification",
+          templateId: null
+        };
+        await storage.createCommunicationHistory(emailHistoryData);
       }
     }
     
