@@ -38,8 +38,8 @@ interface MediaFile {
   thumbnailPath: string | null;
   scheduledDate: string | null;
   tags: string[] | null;
-  clientId: number;
-  client: {
+  userId: number;
+  user: {
     id: number;
     username: string;
     fullName: string;
@@ -407,13 +407,13 @@ export default function ContentViewer() {
                         <div className="flex items-center space-x-3 mb-4">
                           <Avatar>
                             <AvatarFallback>
-                              {selectedContent.client.fullName.charAt(0)}
+                              {selectedContent.user.fullName.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{selectedContent.client.fullName}</p>
+                            <p className="font-medium">{selectedContent.user.fullName}</p>
                             <p className="text-sm text-muted-foreground">
-                              @{selectedContent.client.username}
+                              @{selectedContent.user.username}
                             </p>
                           </div>
                         </div>
