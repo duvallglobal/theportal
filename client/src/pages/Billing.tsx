@@ -101,22 +101,20 @@ export default function Billing() {
   const [updatingPayment, setUpdatingPayment] = useState(false);
   const { toast } = useToast();
 
-  // Fetch subscription data
+  // Fetch real subscription data from API
   const { data: subscription, isLoading } = useQuery({
     queryKey: ["/api/subscription"],
-    // Return mock data for now
-    queryFn: async () => ({
-      id: "sub_123456",
-      plan: "OnlyFans Pro",
-      status: "active",
-      currentPeriodEnd: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-      defaultPaymentMethod: {
-        brand: "visa",
-        last4: "4242",
-        expMonth: 12,
-        expYear: 2024,
-      },
-    }),
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("GET", "/api/subscription");
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("Error fetching subscription data:", error);
+        // Return null if there's no subscription instead of mocking data
+        return null;
+      }
+    },
   });
 
   const handleDownloadInvoice = (invoiceId: string) => {
@@ -126,23 +124,59 @@ export default function Billing() {
     });
   };
 
+  const [isChangingPlan, setIsChangingPlan] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  
+  // Handle updating payment method with Stripe Elements
   const handleUpdatePaymentMethod = () => {
     setUpdatingPayment(true);
-    // In a real app, this would show a Stripe Elements form
-    setTimeout(() => {
-      setUpdatingPayment(false);
-      toast({
-        title: "Payment method updated",
-        description: "Your payment method has been successfully updated.",
-      });
-    }, 1500);
+    
+    // TODO: Implement Stripe Elements for updating payment method
+    // This would be integrated with a Stripe Elements form in a modal
+    toast({
+      title: "Coming Soon",
+      description: "Payment method updates will be available soon.",
+    });
+    
+    setUpdatingPayment(false);
   };
 
-  const handleChangePlan = (planId: string) => {
-    toast({
-      title: "Change plan",
-      description: `You selected the ${planId} plan. This would open a payment flow in a real app.`,
-    });
+  // Handle plan change with Stripe
+  const handleChangePlan = async (planId: string) => {
+    try {
+      setSelectedPlanId(planId);
+      setIsChangingPlan(true);
+      
+      // Make API request to create/update subscription
+      const response = await apiRequest("POST", "/api/create-subscription", { planId });
+      const data = await response.json();
+      
+      if (data.clientSecret) {
+        // Redirect to checkout page with client secret
+        toast({
+          title: "Subscription Update",
+          description: `Redirecting to payment for ${planId} plan.`,
+        });
+        
+        // In a full implementation, this would redirect to a checkout page
+        // window.location.href = `/checkout?client_secret=${data.clientSecret}`;
+      } else {
+        // Subscription updated without requiring payment
+        toast({
+          title: "Subscription Updated",
+          description: `Your subscription has been updated to the ${planId} plan.`,
+        });
+      }
+    } catch (error) {
+      console.error("Error changing plan:", error);
+      toast({
+        title: "Error",
+        description: "There was a problem updating your subscription. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsChangingPlan(false);
+    }
   };
 
   if (isLoading) {
@@ -346,10 +380,18 @@ export default function Billing() {
                   className={plan.recommended ? "bg-primary w-full" : "w-full"}
                   variant={plan.recommended ? "default" : "outline"}
                   onClick={() => handleChangePlan(plan.id)}
+                  disabled={isChangingPlan || (subscription?.plan?.toLowerCase() === plan.name.toLowerCase())}
                 >
-                  {subscription?.plan === plan.name
-                    ? "Current Plan"
-                    : "Select Plan"}
+                  {isChangingPlan && selectedPlanId === plan.id ? (
+                    <>
+                      <Clock className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : subscription?.plan?.toLowerCase() === plan.name.toLowerCase() ? (
+                    "Current Plan"
+                  ) : (
+                    "Select Plan"
+                  )}
                 </Button>
               </CardFooter>
             </Card>
