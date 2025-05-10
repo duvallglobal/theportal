@@ -67,9 +67,9 @@ export default function ContentViewer() {
     staleTime: 60000, // 1 minute
   });
 
-  // Fetch all users for the filter
-  const { data: users = [] } = useQuery<{ id: number; username: string; fullName: string }[]>({
-    queryKey: ['/api/admin/users'],
+  // Fetch all clients for the filter
+  const { data: clients = [] } = useQuery<{ id: number; username: string; fullName: string }[]>({
+    queryKey: ['/api/admin/clients'],
     staleTime: 300000, // 5 minutes
   });
 
@@ -155,15 +155,15 @@ export default function ContentViewer() {
           </div>
 
           <div className="flex flex-wrap gap-2 w-full md:w-auto">
-            <Select value={selectedUser} onValueChange={setSelectedUser}>
+            <Select value={selectedClient} onValueChange={setSelectedClient}>
               <SelectTrigger className="md:w-[180px]">
-                <SelectValue placeholder="Filter by user" />
+                <SelectValue placeholder="Filter by client" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                {users.map((user) => (
-                  <SelectItem key={user.id} value={user.id.toString()}>
-                    {user.fullName}
+                <SelectItem value="all">All Clients</SelectItem>
+                {clients.map((client) => (
+                  <SelectItem key={client.id} value={client.id.toString()}>
+                    {client.fullName}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -278,7 +278,7 @@ export default function ContentViewer() {
                       </h3>
                       <div className="flex items-center mt-2 text-sm text-muted-foreground">
                         <User className="h-3 w-3 mr-1" />
-                        <span>{content.user.fullName}</span>
+                        <span>{content.client.fullName}</span>
                       </div>
                       <div className="flex items-center mt-1 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3 mr-1" />
@@ -328,7 +328,7 @@ export default function ContentViewer() {
                       <div className="flex flex-wrap gap-2 mt-1">
                         <span className="text-sm text-muted-foreground flex items-center">
                           <User className="h-3 w-3 mr-1" />
-                          {content.user.fullName}
+                          {content.client.fullName}
                         </span>
                         <span className="text-sm text-muted-foreground flex items-center">
                           <Calendar className="h-3 w-3 mr-1" />
@@ -355,7 +355,7 @@ export default function ContentViewer() {
               <DialogHeader>
                 <DialogTitle>{selectedContent.title}</DialogTitle>
                 <DialogDescription>
-                  Uploaded by {selectedContent.user.fullName} on{' '}
+                  Uploaded by {selectedContent.client.fullName} on{' '}
                   {formatDate(selectedContent.createdAt)}
                 </DialogDescription>
               </DialogHeader>
@@ -407,13 +407,13 @@ export default function ContentViewer() {
                         <div className="flex items-center space-x-3 mb-4">
                           <Avatar>
                             <AvatarFallback>
-                              {selectedContent.user.fullName.charAt(0)}
+                              {selectedContent.client.fullName.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{selectedContent.user.fullName}</p>
+                            <p className="font-medium">{selectedContent.client.fullName}</p>
                             <p className="text-sm text-muted-foreground">
-                              @{selectedContent.user.username}
+                              @{selectedContent.client.username}
                             </p>
                           </div>
                         </div>
