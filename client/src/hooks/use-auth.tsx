@@ -39,14 +39,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: LoginData) => {
-      // The server expects the email field to be used for both email and username login
-      // We're keeping the parameter name as 'email' to maintain consistency with the form
-      const res = await apiRequest("POST", "/api/auth/login", credentials);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Login failed");
+      try {
+        // The server expects the email field to be used for both email and username login
+        // We're keeping the parameter name as 'email' to maintain consistency with the form
+        const res = await apiRequest("POST", "/api/auth/login", credentials);
+        return await res.json();
+      } catch (error) {
+        console.error("Login error:", error);
+        throw error;
       }
-      return await res.json();
     },
     onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/auth/me"], user);
