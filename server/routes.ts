@@ -690,6 +690,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 3: // Brand Strategy
           const { growthGoals, contentTypes, brandDescription, voiceTone, doNotSayTerms } = req.body;
           
+          // First, ensure the JSON data is properly formatted
+          const formattedGrowthGoals = Array.isArray(growthGoals) ? JSON.stringify(growthGoals) : JSON.stringify([]);
+          const formattedContentTypes = Array.isArray(contentTypes) ? JSON.stringify(contentTypes) : JSON.stringify([]);
+          
+          // Update profile information
           profile = await storage.getProfileByUserId(req.user.id);
           if (profile) {
             await storage.updateProfile(profile.id, {
@@ -706,17 +711,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
           
+          // Update content strategy
           const existingStrategy = await storage.getContentStrategyByUserId(req.user.id);
           if (existingStrategy) {
             await storage.updateContentStrategy(existingStrategy.id, {
-              growthGoals,
-              contentTypes
+              growthGoals: formattedGrowthGoals,
+              contentTypes: formattedContentTypes,
+              doNotSayTerms // Also store in content strategy for reference
             });
           } else {
             await storage.createContentStrategy({
               userId: req.user.id,
-              growthGoals,
-              contentTypes
+              growthGoals: formattedGrowthGoals,
+              contentTypes: formattedContentTypes,
+              doNotSayTerms
             });
           }
           break;
@@ -724,6 +732,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         case 4: // Communication
           const { notificationPreferences, bestContactMethod, preferredCheckInTime, timezone } = req.body;
           
+          // Ensure preferences is stored as JSON if it's an array
+          const formattedNotificationPreferences = Array.isArray(notificationPreferences) 
+            ? JSON.stringify(notificationPreferences) 
+            : JSON.stringify([]);
+          
           profile = await storage.getProfileByUserId(req.user.id);
           if (profile) {
             await storage.updateProfile(profile.id, {
@@ -739,11 +752,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               timezone
             });
           }
+          
+          // Also store notification preferences in a user-specific settings table if applicable
+          // For now we'll add this data to the same profile record
+          
           break;
           
         case 5: // Content Strategy
           const { uploadFrequency, existingContent } = req.body;
           
+          // First update the profile with the upload frequency
           profile = await storage.getProfileByUserId(req.user.id);
           if (profile) {
             await storage.updateProfile(profile.id, {
@@ -756,14 +774,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
-          // Also update existingContent in the content strategy
+          // Then update the content strategy with existing content
           const contentStrategy = await storage.getContentStrategyByUserId(req.user.id);
           if (contentStrategy) {
             await storage.updateContentStrategy(contentStrategy.id, {
               existingContent
             });
           } else {
-            // Create with defaults for required fields if they don't exist yet
+            // If no content strategy exists yet, create one with default values for required fields
             await storage.createContentStrategy({
               userId: req.user.id,
               existingContent,
