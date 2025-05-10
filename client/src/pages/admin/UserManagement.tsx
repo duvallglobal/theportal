@@ -43,7 +43,7 @@ import {
   AvatarFallback,
 } from "@/components/ui/avatar";
 
-interface UserType {
+interface ClientType {
   id: number;
   username: string;
   email: string;
@@ -63,8 +63,8 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const { toast } = useToast();
   
-  // Fetch users data
-  const { data: users = [], isLoading, error } = useQuery<UserType[]>({
+  // Fetch clients data
+  const { data: clients = [], isLoading, error } = useQuery<ClientType[]>({
     queryKey: ['/api/admin/users'],
   });
 
@@ -101,23 +101,23 @@ export default function UserManagement() {
     }
   };
 
-  // Filter users
-  const filteredUsers = users.filter((user) => {
+  // Filter clients
+  const filteredClients = clients.filter((client) => {
     // Filter by search query
     const matchesSearch = 
       searchQuery === '' ||
-      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.fullName.toLowerCase().includes(searchQuery.toLowerCase());
+      client.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      client.fullName.toLowerCase().includes(searchQuery.toLowerCase());
     
     // Filter by role
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesRole = roleFilter === 'all' || client.role === roleFilter;
     
     // Filter by status
     const matchesStatus = 
       statusFilter === 'all' || 
-      user.verificationStatus === statusFilter ||
-      (statusFilter === 'incomplete' && user.onboardingStatus === 'incomplete');
+      client.verificationStatus === statusFilter ||
+      (statusFilter === 'incomplete' && client.onboardingStatus === 'incomplete');
     
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -261,12 +261,12 @@ export default function UserManagement() {
             </div>
           ) : error ? (
             <div className="text-center text-red-500 py-6">
-              Error loading users. Please try again.
+              Error loading clients. Please try again.
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : filteredClients.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64">
               <User className="h-16 w-16 text-muted-foreground opacity-50 mb-4" />
-              <h3 className="text-lg font-medium">No users found</h3>
+              <h3 className="text-lg font-medium">No clients found</h3>
               <p className="text-muted-foreground text-center max-w-md mt-1">
                 Try adjusting your filters or search terms.
               </p>
@@ -276,7 +276,7 @@ export default function UserManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>User Info</TableHead>
+                    <TableHead>Client Info</TableHead>
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Joined</TableHead>
@@ -284,44 +284,44 @@ export default function UserManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-muted/50">
+                  {filteredClients.map((client) => (
+                    <TableRow key={client.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarFallback>{user.fullName.charAt(0).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback>{client.fullName.charAt(0).toUpperCase()}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{user.fullName}</p>
-                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                            <p className="font-medium">{client.fullName}</p>
+                            <p className="text-sm text-muted-foreground">{client.email}</p>
                           </div>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getRoleIcon(user.role)}
-                          <span className="capitalize">{user.role}</span>
+                          {getRoleIcon(client.role)}
+                          <span className="capitalize">{client.role}</span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(user.verificationStatus, user.onboardingStatus)}
-                          {getStatusBadge(user.verificationStatus, user.onboardingStatus)}
+                          {getStatusIcon(client.verificationStatus, client.onboardingStatus)}
+                          {getStatusBadge(client.verificationStatus, client.onboardingStatus)}
                         </div>
                       </TableCell>
-                      <TableCell>{formatDate(user.createdAt)}</TableCell>
+                      <TableCell>{formatDate(client.createdAt)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Link href={`/admin/clients/${user.id}`}>
+                          <Link href={`/admin/clients/${client.id}`}>
                             <Button size="sm" variant="outline">
                               Details
                             </Button>
                           </Link>
-                          {user.role === 'client' && (
+                          {client.role === 'client' && (
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleSendWelcomeEmail(user.id, user.email, user.fullName)}
+                              onClick={() => handleSendWelcomeEmail(client.id, client.email, client.fullName)}
                             >
                               Email
                             </Button>

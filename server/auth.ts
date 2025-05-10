@@ -254,6 +254,21 @@ export function setupAuth(app: Express) {
           console.error("Error during login after registration:", err);
           return res.status(500).json({ message: "Error during login after registration" });
         }
+        
+        // Send welcome email
+        try {
+          sendWelcomeEmail(user.email, user.fullName)
+            .then(success => {
+              console.log(`Welcome email to ${user.email} ${success ? 'sent successfully' : 'failed to send'}`);
+            })
+            .catch(emailError => {
+              console.error("Error sending welcome email:", emailError);
+            });
+        } catch (emailError) {
+          console.error("Error sending welcome email:", emailError);
+          // Don't fail registration if email fails
+        }
+        
         // Return a sanitized user object (without password)
         const { password, ...userWithoutPassword } = user;
         return res.status(201).json(userWithoutPassword);
