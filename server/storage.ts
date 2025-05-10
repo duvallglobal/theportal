@@ -1697,12 +1697,24 @@ export class PgStorage implements IStorage {
   
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
     try {
-      const result = await this.db.select()
-        .from(notifications)
-        .where(eq(notifications.userId, userId))
-        .orderBy(desc(notifications.createdAt));
+      // Use raw SQL to accommodate the difference between schema and actual DB structure
+      const result = await this.db.execute(
+        `SELECT 
+          id, 
+          recipient_id as "userId", 
+          type, 
+          title, 
+          content, 
+          link as "entityLink", 
+          is_read as "isRead", 
+          created_at as "createdAt" 
+        FROM notifications 
+        WHERE recipient_id = $1 
+        ORDER BY created_at DESC`,
+        [userId]
+      );
       
-      return result;
+      return result.rows;
     } catch (error) {
       console.error('Error getting notifications by user ID:', error);
       return this.memStorage.getNotificationsByUserId(userId);

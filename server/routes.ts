@@ -1410,19 +1410,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/notifications", validateSession, async (req, res) => {
     try {
       const notifications = await storage.getNotificationsByUserId(req.user.id);
-      // Convert readAt to isRead property for frontend compatibility
-      const formattedNotifications = notifications.map(notification => ({
-        id: notification.id,
-        userId: notification.userId,
-        title: getNotificationSubject(notification.type),
-        message: notification.content,
-        type: notification.type,
-        isRead: !!notification.readAt,
-        entityId: notification.entityId,
-        entityType: notification.entityType,
-        createdAt: notification.createdAt.toISOString()
-      }));
-      res.json(formattedNotifications);
+      // The notifications are already formatted correctly by the raw SQL query
+      res.json(notifications);
     } catch (error) {
       console.error("Get notifications error:", error);
       res.status(500).json({ message: "Internal server error" });
