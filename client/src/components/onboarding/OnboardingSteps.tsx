@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { StepIndicator } from './StepIndicator';
 import { DocumentUploader } from './DocumentUploader';
@@ -25,17 +25,18 @@ import {
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { apiRequest } from '@/lib/queryClient';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { BrandStrategyStep } from './BrandStrategyStep';
+import { Loader2 } from 'lucide-react';
 
-// Define the steps
-const ONBOARDING_STEPS = [
-  { id: 1, title: 'Identity', status: 'completed' },
-  { id: 2, title: 'Account Access', status: 'completed' },
-  { id: 3, title: 'Brand Strategy', status: 'completed' },
-  { id: 4, title: 'Communication', status: 'completed' },
-  { id: 5, title: 'Content Strategy', status: 'completed' },
-  { id: 6, title: 'Verification', status: 'current' },
+// Define the default steps setup
+const DEFAULT_STEPS = [
+  { id: 1, title: 'Identity', status: 'pending' },
+  { id: 2, title: 'Account Access', status: 'pending' },
+  { id: 3, title: 'Brand Strategy', status: 'pending' },
+  { id: 4, title: 'Communication', status: 'pending' },
+  { id: 5, title: 'Content Strategy', status: 'pending' },
+  { id: 6, title: 'Verification', status: 'pending' },
   { id: 7, title: 'Concierge', status: 'pending' },
   { id: 8, title: 'Legal & Consent', status: 'pending' },
 ];
