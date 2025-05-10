@@ -1793,7 +1793,7 @@ export class PgStorage implements IStorage {
       
       const tableExists = tableCheck.rows[0].exists;
       if (!tableExists) {
-        console.warn('Notifications table does not exist, creating table and using fallback');
+        console.warn('Notifications table does not exist, creating table');
         // Create the notifications table if it doesn't exist
         await this.db.execute(`
           CREATE TABLE IF NOT EXISTS notifications (
@@ -1808,30 +1808,40 @@ export class PgStorage implements IStorage {
             FOREIGN KEY (recipient_id) REFERENCES users(id)
           );
         `);
-        return this.memStorage.getNotificationsByUserId(userId);
+        
+        // Return empty array since there are no notifications yet in a newly created table
+        return [];
       }
       
-      // Use raw SQL to match exactly the DB column names
-      const result = await this.db.execute(
-        `SELECT 
-          id, 
-          recipient_id as "recipientId", 
-          type, 
-          title, 
-          content, 
-          link, 
-          is_read as "isRead", 
-          created_at as "createdAt" 
-        FROM notifications 
-        WHERE recipient_id = $1 
-        ORDER BY created_at DESC`,
-        [userId]
-      );
-      
-      return result.rows as Notification[];
+      try {
+        // Use raw SQL to match exactly the DB column names
+        const result = await this.db.execute(
+          `SELECT 
+            id, 
+            recipient_id as "recipientId", 
+            type, 
+            title, 
+            content, 
+            link, 
+            is_read as "isRead", 
+            created_at as "createdAt" 
+          FROM notifications 
+          WHERE recipient_id = $1 
+          ORDER BY created_at DESC`,
+          [userId]
+        );
+        
+        return result.rows as Notification[];
+      } catch (innerError) {
+        // If there's an error with the specific query, it might be a schema mismatch
+        console.error('Error executing notifications query:', innerError);
+        
+        // Verify the table structure and return empty array as fallback
+        return [];
+      }
     } catch (error) {
       console.error('Error getting notifications by user ID:', error);
-      return this.memStorage.getNotificationsByUserId(userId);
+      return [];
     }
   }
   

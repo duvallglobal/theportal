@@ -39,15 +39,25 @@ export function NotificationsPopover() {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
+        setError(false);
         const response = await fetch('/api/notifications');
         if (!response.ok) {
           throw new Error('Failed to fetch notifications');
         }
         const data = await response.json();
-        setNotifications(data);
-        setUnreadCount(data.filter((n: Notification) => !n.isRead).length);
+        setNotifications(data || []);
+        // Only count notifications that actually exist and are unread
+        if (Array.isArray(data)) {
+          setUnreadCount(data.filter((n: Notification) => !n.isRead).length);
+        } else {
+          setUnreadCount(0);
+        }
       } catch (error) {
         console.error('Error fetching notifications:', error);
+        setError(true);
+        // Reset to empty if error
+        setNotifications([]);
+        setUnreadCount(0);
       } finally {
         setLoading(false);
       }
@@ -175,11 +185,14 @@ export function NotificationsPopover() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="border-b border-border p-3 flex items-center justify-between">
-          <h3 className="font-medium">Notifications</h3>
+      <PopoverContent className="w-80 p-0 shadow-md" align="end">
+        <div className="border-b p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bell className="h-4 w-4 text-primary" />
+            <h3 className="font-medium">Notifications</h3>
+          </div>
           {unreadCount > 0 && (
-            <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+            <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs h-8">
               Mark all as read
             </Button>
           )}
@@ -190,10 +203,18 @@ export function NotificationsPopover() {
             <div className="flex items-center justify-center h-full p-4">
               <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
             </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+              <p className="text-destructive">Unable to load notifications</p>
+              <p className="text-sm mt-1 text-muted-foreground">Please try again later</p>
+            </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full p-4 text-center text-muted-foreground">
-              <p>No notifications</p>
-              <p className="text-sm mt-1">We'll notify you when something happens</p>
+            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+              <Bell className="h-10 w-10 text-muted-foreground mb-2 opacity-30" />
+              <p className="text-muted-foreground">No notifications</p>
+              <p className="text-xs mt-1 text-muted-foreground">
+                We'll notify you when something happens
+              </p>
             </div>
           ) : (
             <ul className="divide-y">
@@ -201,17 +222,17 @@ export function NotificationsPopover() {
                 <li
                   key={notification.id}
                   className={`hover:bg-accent/50 cursor-pointer p-3 ${
-                    !notification.isRead ? 'bg-accent/30' : ''
+                    !notification.isRead ? 'bg-accent/20' : ''
                   }`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="text-2xl" aria-hidden="true">
+                    <div className="text-xl bg-background-card rounded-full p-2 shadow-sm" aria-hidden="true">
                       {getNotificationIcon(notification.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{notification.title}</p>
-                      <p className="text-sm text-muted-foreground truncate">
+                      <p className="text-sm text-muted-foreground truncate max-w-[200px]">
                         {notification.content}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">

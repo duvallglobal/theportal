@@ -82,44 +82,57 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col lg:ml-64 w-full">
         {/* Header */}
-        <header className="bg-background-card shadow-md">
+        <header className="bg-background z-10 border-b">
           <div className="flex items-center justify-between p-4">
-            <button
-              id="sidebar-toggle"
-              onClick={toggleSidebar}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-white hover:bg-background-lighter"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-            <h1 className="text-xl font-semibold text-white lg:hidden">ManageTheFans</h1>
+            <div className="flex items-center gap-4">
+              <button
+                id="sidebar-toggle"
+                onClick={toggleSidebar}
+                className="lg:hidden p-2 rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+                aria-label="Toggle sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <h1 className="text-xl font-semibold lg:hidden">ManageTheFans</h1>
+            </div>
+            
             <div className="flex items-center space-x-4">
-              <NotificationsPopover />
               <div className="relative lg:block hidden">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="bg-background-lighter text-gray-300 rounded-lg pl-10 pr-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <input
+                    type="text"
+                    placeholder="Search..."
+                    className="bg-background-card border rounded-md pl-10 pr-4 py-2 w-64 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background"
+                  />
+                </div>
               </div>
+              
+              <NotificationsPopover />
               
               {user && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-white">
-                        {user.fullName.charAt(0).toUpperCase()}
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full" aria-label="User menu">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        {user.fullName.split(' ').map(name => name[0]).join('').toUpperCase()}
                       </div>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.fullName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                      </div>
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => navigate('/profile')}>
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout}>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -131,7 +144,7 @@ export function SidebarLayout({ children }: SidebarLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-6 overflow-auto">{children}</main>
+        <main className="flex-1 p-4 md:p-6 overflow-auto bg-background">{children}</main>
       </div>
     </div>
   );
