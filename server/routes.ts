@@ -940,6 +940,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.status(500).json({ message: "Error creating subscription: " + error.message });
       }
     });
+    
+    // API endpoint to get user's subscription details
+    app.get('/api/subscription', validateSession, async (req, res) => {
+      try {
+        const userId = req.user.id;
+        const subscription = await storage.getSubscriptionByUserId(userId);
+        
+        if (!subscription) {
+          return res.json(null);
+        }
+        
+        // Get the user to include payment method details if available
+        const user = await storage.getUser(userId);
+        
+        // If we have a Stripe subscription ID and Stripe is configured, fetch latest details
+        if (subscription.stripeSubscriptionId && stripe && 
+            !subscription.stripeSubscriptionId.startsWith('pending_')) {
+          try {
+            const stripeSubscription = await stripe.subscriptions.retrieve(
+              subscription.stripeSubscriptionId,
+              { 
+                expand: ['default_payment_method']
+              }
+            );
+            
+            // Enhance response with Stripe data
+            const paymentMethod = stripeSubscription.default_payment_method;
+            const enhancedSubscription = {
+              ...subscription,
+              status: stripeSubscription.status,
+              currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+              defaultPaymentMethod: paymentMethod ? {
+                brand: paymentMethod.card.brand,
+                last4: paymentMethod.card.last4,
+                expMonth: paymentMethod.card.exp_month,
+                expYear: paymentMethod.card.exp_year
+              } : null
+            };
+            
+            return res.json(enhancedSubscription);
+          } catch (stripeError) {
+            console.error("Error fetching Stripe subscription:", stripeError);
+            // Continue to return the database subscription if Stripe fetch fails
+          }
+        }
+        
+        // Return the basic subscription from the database
+        return res.json(subscription);
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+        res.status(500).json({ message: "Failed to fetch subscription" });
+      }
+    });
 
     // Helper function to determine plan type from price ID
     function getPlanTypeFromPriceId(priceId: string): string {
