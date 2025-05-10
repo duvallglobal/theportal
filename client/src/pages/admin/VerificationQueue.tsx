@@ -311,11 +311,11 @@ export default function VerificationQueue() {
                       <dl className="space-y-2">
                         <div className="flex justify-between">
                           <dt className="text-muted-foreground">Email:</dt>
-                          <dd className="font-medium">{selectedUser.email}</dd>
+                          <dd className="font-medium">{selectedClient.email}</dd>
                         </div>
                         <div className="flex justify-between">
                           <dt className="text-muted-foreground">Phone:</dt>
-                          <dd className="font-medium">{selectedUser.phone || 'Not provided'}</dd>
+                          <dd className="font-medium">{selectedClient.phone || 'Not provided'}</dd>
                         </div>
                       </dl>
                     </div>
@@ -325,18 +325,18 @@ export default function VerificationQueue() {
                       <dl className="space-y-2">
                         <div className="flex justify-between">
                           <dt className="text-muted-foreground">Registered:</dt>
-                          <dd className="font-medium">{formatDate(selectedUser.createdAt)}</dd>
+                          <dd className="font-medium">{formatDate(selectedClient.createdAt)}</dd>
                         </div>
                         <div className="flex justify-between">
                           <dt className="text-muted-foreground">Onboarding:</dt>
                           <dd className="font-medium">
-                            {selectedUser.onboardingStatus === 'completed' ? (
+                            {selectedClient.onboardingStatus === 'completed' ? (
                               <Badge variant="outline" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:text-green-500">
                                 Completed
                               </Badge>
                             ) : (
                               <Badge variant="outline">
-                                Step {selectedUser.onboardingStep || 0} of 5
+                                Step {selectedClient.onboardingStep || 0} of 5
                               </Badge>
                             )}
                           </dd>
@@ -345,8 +345,8 @@ export default function VerificationQueue() {
                           <dt className="text-muted-foreground">Verification:</dt>
                           <dd className="font-medium">
                             {getStatusBadge(
-                              selectedUser.verificationStatus,
-                              selectedUser.onboardingStatus
+                              selectedClient.verificationStatus,
+                              selectedClient.onboardingStatus
                             )}
                           </dd>
                         </div>
@@ -360,53 +360,53 @@ export default function VerificationQueue() {
                       <div className="space-y-2">
                         <div className="flex justify-between mb-1">
                           <span className="text-sm font-medium">
-                            {selectedUser.onboardingStatus === 'completed'
+                            {selectedClient.onboardingStatus === 'completed'
                               ? 'Completed'
-                              : `Step ${selectedUser.onboardingStep || 0} of 5`}
+                              : `Step ${selectedClient.onboardingStep || 0} of 5`}
                           </span>
                           <span className="text-sm font-medium">
-                            {selectedUser.onboardingStatus === 'completed' ? '100%' : `${((selectedUser.onboardingStep || 0) / 5) * 100}%`}
+                            {selectedClient.onboardingStatus === 'completed' ? '100%' : `${((selectedClient.onboardingStep || 0) / 5) * 100}%`}
                           </span>
                         </div>
                         <div className="w-full bg-muted-foreground/20 rounded-full h-2.5">
                           <div
                             className="bg-primary h-2.5 rounded-full"
                             style={{
-                              width: selectedUser.onboardingStatus === 'completed'
+                              width: selectedClient.onboardingStatus === 'completed'
                                 ? '100%'
-                                : `${((selectedUser.onboardingStep || 0) / 5) * 100}%`,
+                                : `${((selectedClient.onboardingStep || 0) / 5) * 100}%`,
                             }}
                           ></div>
                         </div>
 
                         <div className="pt-4 space-y-2">
                           <div className="flex items-center">
-                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedUser.onboardingStep && selectedUser.onboardingStep >= 1 ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span className={selectedUser.onboardingStep && selectedUser.onboardingStep >= 1 ? 'text-foreground' : 'text-muted-foreground'}>
+                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedClient.onboardingStep && selectedClient.onboardingStep >= 1 ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <span className={selectedClient.onboardingStep && selectedClient.onboardingStep >= 1 ? 'text-foreground' : 'text-muted-foreground'}>
                               Account Setup
                             </span>
                           </div>
                           <div className="flex items-center">
-                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedUser.onboardingStep && selectedUser.onboardingStep >= 2 ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span className={selectedUser.onboardingStep && selectedUser.onboardingStep >= 2 ? 'text-foreground' : 'text-muted-foreground'}>
+                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedClient.onboardingStep && selectedClient.onboardingStep >= 2 ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <span className={selectedClient.onboardingStep && selectedClient.onboardingStep >= 2 ? 'text-foreground' : 'text-muted-foreground'}>
                               Personal Information
                             </span>
                           </div>
                           <div className="flex items-center">
-                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedUser.onboardingStep && selectedUser.onboardingStep >= 3 ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span className={selectedUser.onboardingStep && selectedUser.onboardingStep >= 3 ? 'text-foreground' : 'text-muted-foreground'}>
+                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedClient.onboardingStep && selectedClient.onboardingStep >= 3 ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <span className={selectedClient.onboardingStep && selectedClient.onboardingStep >= 3 ? 'text-foreground' : 'text-muted-foreground'}>
                               Platform Connections
                             </span>
                           </div>
                           <div className="flex items-center">
-                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedUser.onboardingStep && selectedUser.onboardingStep >= 4 ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span className={selectedUser.onboardingStep && selectedUser.onboardingStep >= 4 ? 'text-foreground' : 'text-muted-foreground'}>
+                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedClient.onboardingStep && selectedClient.onboardingStep >= 4 ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <span className={selectedClient.onboardingStep && selectedClient.onboardingStep >= 4 ? 'text-foreground' : 'text-muted-foreground'}>
                               Content Strategy
                             </span>
                           </div>
                           <div className="flex items-center">
-                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedUser.onboardingStep && selectedUser.onboardingStep >= 5 ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span className={selectedUser.onboardingStep && selectedUser.onboardingStep >= 5 ? 'text-foreground' : 'text-muted-foreground'}>
+                            <CheckSquare className={`h-4 w-4 mr-2 ${selectedClient.onboardingStep && selectedClient.onboardingStep >= 5 ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <span className={selectedClient.onboardingStep && selectedClient.onboardingStep >= 5 ? 'text-foreground' : 'text-muted-foreground'}>
                               Billing Setup
                             </span>
                           </div>
