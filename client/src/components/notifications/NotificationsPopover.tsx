@@ -96,17 +96,22 @@ export function NotificationsPopover() {
   const navigateToEntity = (notification: Notification) => {
     setOpen(false);
     
-    if (!notification.entityType || !notification.entityId) return;
+    // If notification has a specific link, use that
+    if (notification.link) {
+      navigate(notification.link);
+      return;
+    }
     
-    switch (notification.entityType) {
+    // Otherwise navigate based on type
+    switch (notification.type) {
       case 'message':
-        navigate(`/messages?conversation=${notification.entityId}`);
+        navigate(`/messages`);
         break;
       case 'appointment':
-        navigate(`/appointments?id=${notification.entityId}`);
+        navigate(`/appointments`);
         break;
       case 'content':
-        navigate(`/content-upload?id=${notification.entityId}`);
+        navigate(`/content`);
         break;
       case 'verification':
         navigate(`/profile?tab=verification`);

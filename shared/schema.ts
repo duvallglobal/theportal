@@ -300,7 +300,8 @@ export const insertRentMenSettingsSchema = createInsertSchema(rentMenSettings).o
 export const insertNotificationSchema = createInsertSchema(notifications).omit({
   id: true,
   createdAt: true,
-  readAt: true
+  readAt: true,
+  isRead: true
 });
 
 export const insertCommunicationTemplateSchema = createInsertSchema(communicationTemplates).omit({
