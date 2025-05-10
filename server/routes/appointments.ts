@@ -107,10 +107,12 @@ router.post("/:id/notification", async (req: Request, res: Response) => {
         
         // Log notification to communication history
         await storage.createCommunicationHistory({
-          userId: appointment.clientId,
+          recipientId: appointment.clientId,
+          senderId: appointment.adminId,
           content: smsMessage,
           type: "appointment",
-          deliveryMethod: "sms",
+          status: "sent",
+          sentAt: new Date(),
         });
       }
     }

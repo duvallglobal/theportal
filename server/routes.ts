@@ -172,6 +172,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Register admin routes
   app.use('/api/admin', authMiddleware.isAdmin, adminRoutes);
   
+  // Register appointments routes
+  app.use('/api/appointments', validateSession, appointmentsRoutes);
+  
   // Legacy Admin API Routes
   app.get("/api/admin/users", authMiddleware.isAdmin, async (req, res) => {
     try {

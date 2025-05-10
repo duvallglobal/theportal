@@ -68,8 +68,12 @@ export interface IStorage {
   // Appointment methods
   getAppointment(id: number): Promise<Appointment | undefined>;
   getAppointmentsByUserId(userId: number): Promise<Appointment[]>;
+  getAppointmentWithClient(id: number): Promise<(Appointment & { client?: User }) | undefined>;
+  getAppointmentsByAdminId(adminId: number): Promise<Appointment[]>;
+  getAppointmentsByClientId(clientId: number): Promise<Appointment[]>;
   createAppointment(appointment: InsertAppointment): Promise<Appointment>;
   updateAppointment(id: number, appointmentData: Partial<Appointment>): Promise<Appointment>;
+  sendEmail(to: string, subject: string, content: string): Promise<boolean>;
   
   // Message methods
   getMessage(id: number): Promise<Message | undefined>;
@@ -592,6 +596,22 @@ export class MemStorage implements IStorage {
   async getAppointment(id: number): Promise<Appointment | undefined> {
     return this.appointmentsMap.get(id);
   }
+  
+  async getAppointmentWithClient(id: number): Promise<(Appointment & { client?: User }) | undefined> {
+    const appointment = await this.getAppointment(id);
+    if (!appointment) {
+      return undefined;
+    }
+    
+    // Get client information
+    const client = await this.getUser(appointment.clientId);
+    
+    // Return appointment with client data
+    return {
+      ...appointment,
+      client: client
+    };
+  }
 
   async getAppointmentsByAdminId(adminId: number): Promise<Appointment[]> {
     return Array.from(this.appointmentsMap.values()).filter(
@@ -642,6 +662,19 @@ export class MemStorage implements IStorage {
     
     this.appointmentsMap.set(id, updatedAppointment);
     return updatedAppointment;
+  }
+  
+  // Email sending function for appointments
+  async sendEmail(to: string, subject: string, content: string): Promise<boolean> {
+    try {
+      // In a real implementation, this would call SendGrid or another email service
+      // Here we just log the email for demonstration purposes
+      console.log(`Email notification sent to ${to} about ${subject}`);
+      return true;
+    } catch (error) {
+      console.error("Error sending email:", error);
+      return false;
+    }
   }
 
   // Message methods
