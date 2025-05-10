@@ -183,7 +183,6 @@ export function Sidebar({
                         ? "bg-primary text-white"
                         : "text-gray-300 hover:bg-gray-800 hover:text-white"
                     }`}
-                    title={item.description}
                   >
                     {item.icon}
                     <span className="ml-2">{item.name}</span>
@@ -209,7 +208,7 @@ export function Sidebar({
               {user?.fullName || "Admin User"}
             </h4>
             <p className="text-xs text-gray-400">
-              {user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || "Admin"}
+              {user && user.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : "Admin"}
             </p>
           </div>
         </div>
