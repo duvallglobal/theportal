@@ -131,16 +131,7 @@ export default function Billing() {
   
   // Handle updating payment method with Stripe Elements
   const handleUpdatePaymentMethod = () => {
-    setUpdatingPayment(true);
-    
-    // TODO: Implement Stripe Elements for updating payment method
-    // This would be integrated with a Stripe Elements form in a modal
-    toast({
-      title: "Coming Soon",
-      description: "Payment method updates will be available soon.",
-    });
-    
-    setUpdatingPayment(false);
+    setUpdatePaymentModalOpen(true);
   };
 
   // Handle plan change with Stripe
@@ -191,6 +182,10 @@ export default function Billing() {
 
   return (
     <div>
+      <UpdatePaymentModal 
+        open={updatePaymentModalOpen} 
+        onOpenChange={setUpdatePaymentModalOpen}
+      />
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-white">Billing</h1>
         <p className="text-gray-400 mt-1">
