@@ -52,7 +52,7 @@ interface Subscription {
     username: string;
     fullName: string;
     email: string;
-  };
+  }; // Client information
 }
 
 interface Invoice {
@@ -68,7 +68,7 @@ interface Invoice {
     id: number;
     fullName: string;
     email: string;
-  };
+  }; // Client information;
 }
 
 export default function BillingManagement() {
