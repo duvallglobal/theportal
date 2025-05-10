@@ -1,10 +1,15 @@
 // This script automatically pushes the schema to the database
 // It's designed to be non-interactive to avoid the need for user input
 
-const { exec } = require('child_process');
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+import { exec } from 'child_process';
+import pg from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const { Pool } = pg;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Database connection
 const pool = new Pool({
