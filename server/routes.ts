@@ -532,10 +532,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
           
         case 2: // Account Access
-          const { onlyFansUsername, onlyFansPassword, needsOnlyFansCreation } = req.body;
-          const platformType = "OnlyFans";
+          // Handle OnlyFans account
+          const { 
+            onlyFansUsername, 
+            onlyFansPassword, 
+            needsOnlyFansCreation,
+            instagramUsername,
+            needsInstagramCreation,
+            tiktokUsername,
+            needsTiktokCreation,
+            twitterUsername,
+            needsTwitterCreation,
+            snapchatUsername,
+            needsSnapchatCreation,
+            redditUsername,
+            needsRedditCreation,
+            preferredHandles
+          } = req.body;
           
-          const existingAccount = await storage.getPlatformAccountByUserIdAndType(req.user.id, platformType);
+          // Store OnlyFans account
+          let platformType = "OnlyFans";
+          let existingAccount = await storage.getPlatformAccountByUserIdAndType(req.user.id, platformType);
+          
           if (existingAccount) {
             await storage.updatePlatformAccount(existingAccount.id, {
               username: onlyFansUsername,
@@ -551,6 +569,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
               needsCreation: needsOnlyFansCreation
             });
           }
+          
+          // Store Instagram account
+          if (instagramUsername || needsInstagramCreation) {
+            platformType = "Instagram";
+            existingAccount = await storage.getPlatformAccountByUserIdAndType(req.user.id, platformType);
+            
+            if (existingAccount) {
+              await storage.updatePlatformAccount(existingAccount.id, {
+                username: instagramUsername,
+                needsCreation: needsInstagramCreation
+              });
+            } else {
+              await storage.createPlatformAccount({
+                userId: req.user.id,
+                platformType,
+                username: instagramUsername,
+                needsCreation: needsInstagramCreation
+              });
+            }
+          }
+          
+          // Store TikTok account
+          if (tiktokUsername || needsTiktokCreation) {
+            platformType = "TikTok";
+            existingAccount = await storage.getPlatformAccountByUserIdAndType(req.user.id, platformType);
+            
+            if (existingAccount) {
+              await storage.updatePlatformAccount(existingAccount.id, {
+                username: tiktokUsername,
+                needsCreation: needsTiktokCreation
+              });
+            } else {
+              await storage.createPlatformAccount({
+                userId: req.user.id,
+                platformType,
+                username: tiktokUsername,
+                needsCreation: needsTiktokCreation
+              });
+            }
+          }
+          
+          // Store Twitter account
+          if (twitterUsername || needsTwitterCreation) {
+            platformType = "Twitter";
+            existingAccount = await storage.getPlatformAccountByUserIdAndType(req.user.id, platformType);
+            
+            if (existingAccount) {
+              await storage.updatePlatformAccount(existingAccount.id, {
+                username: twitterUsername,
+                needsCreation: needsTwitterCreation
+              });
+            } else {
+              await storage.createPlatformAccount({
+                userId: req.user.id,
+                platformType,
+                username: twitterUsername,
+                needsCreation: needsTwitterCreation
+              });
+            }
+          }
+          
+          // Store Snapchat account
+          if (snapchatUsername || needsSnapchatCreation) {
+            platformType = "Snapchat";
+            existingAccount = await storage.getPlatformAccountByUserIdAndType(req.user.id, platformType);
+            
+            if (existingAccount) {
+              await storage.updatePlatformAccount(existingAccount.id, {
+                username: snapchatUsername,
+                needsCreation: needsSnapchatCreation
+              });
+            } else {
+              await storage.createPlatformAccount({
+                userId: req.user.id,
+                platformType,
+                username: snapchatUsername,
+                needsCreation: needsSnapchatCreation
+              });
+            }
+          }
+          
+          // Store Reddit account
+          if (redditUsername || needsRedditCreation) {
+            platformType = "Reddit";
+            existingAccount = await storage.getPlatformAccountByUserIdAndType(req.user.id, platformType);
+            
+            if (existingAccount) {
+              await storage.updatePlatformAccount(existingAccount.id, {
+                username: redditUsername,
+                needsCreation: needsRedditCreation
+              });
+            } else {
+              await storage.createPlatformAccount({
+                userId: req.user.id,
+                platformType,
+                username: redditUsername,
+                needsCreation: needsRedditCreation
+              });
+            }
+          }
+          
+          // Store preferred handles
+          if (preferredHandles) {
+            let profile = await storage.getProfileByUserId(req.user.id);
+            if (profile) {
+              await storage.updateProfile(profile.id, {
+                preferredHandles
+              });
+            } else {
+              await storage.createProfile({
+                userId: req.user.id,
+                preferredHandles
+              });
+            }
+          }
+          
           break;
           
         case 3: // Brand Strategy
