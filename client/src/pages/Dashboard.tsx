@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
 import { 
   User, 
   Target, 
@@ -16,6 +17,19 @@ import {
   MapPin,
   LayoutList
 } from 'lucide-react';
+
+// Define interfaces for API responses
+interface StatCard {
+  title: string;
+  value: string | number;
+  icon: string;
+  iconBgColor: string;
+  trend?: {
+    value: number;
+    direction: 'up' | 'down' | 'neutral';
+    label: string;
+  };
+}
 import { StatCard } from '@/components/dashboard/StatCard';
 import { OnboardingProgressCard } from '@/components/dashboard/OnboardingProgressCard';
 import { WorkflowCard } from '@/components/dashboard/WorkflowCard';
@@ -46,32 +60,34 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function Dashboard() {
+  const { user } = useAuth();
   // User stats from API
-  const { data: statsData, isLoading: statsLoading } = useQuery({
+  // Fetch stats from API
+  const { data: statsData, isLoading: statsLoading } = useQuery<StatCard[]>({
     queryKey: ['/api/client/stats'],
     enabled: true, // We'll handle the empty state in the UI
   });
   
   // Default empty stats array
-  const stats = statsData?.length ? statsData : [];
+  const stats: StatCard[] = statsData || [];
 
   // Fetch recent activities from API
-  const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
+  const { data: activitiesData, isLoading: activitiesLoading } = useQuery<Activity[]>({
     queryKey: ['/api/client/activities'],
     enabled: true, // We'll handle the empty state in the UI
   });
   
   // Default empty activities array
-  const activities: Activity[] = activitiesData?.length ? activitiesData : [];
+  const activities: Activity[] = activitiesData || [];
 
   // Fetch upcoming appointments from API
-  const { data: appointmentsData, isLoading: appointmentsLoading } = useQuery({
+  const { data: appointmentsData, isLoading: appointmentsLoading } = useQuery<Appointment[]>({
     queryKey: ['/api/client/appointments'],
     enabled: true, // We'll handle the empty state in the UI
   });
   
   // Default empty appointments array
-  const appointments: Appointment[] = appointmentsData?.length ? appointmentsData : [];
+  const appointments: Appointment[] = appointmentsData || [];
 
   // Workflow cards
   const workflowCards = [
@@ -128,16 +144,33 @@ export default function Dashboard() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <StatCard
-            key={index}
-            title={stat.title}
-            value={stat.value}
-            icon={stat.icon}
-            iconBgColor={stat.iconBgColor}
-            trend={stat.trend}
-          />
-        ))}
+        {statsLoading ? (
+          // Show loading state for stats
+          Array(4).fill(0).map((_, index) => (
+            <Card key={index} className="p-6">
+              <SkeletonLoader variant="text" className="w-1/2 mb-4" />
+              <SkeletonLoader variant="text" className="w-1/3 mb-2" />
+              <SkeletonLoader variant="text" className="w-2/3" />
+            </Card>
+          ))
+        ) : stats.length > 0 ? (
+          // Show actual stats if available
+          stats.map((stat, index) => (
+            <StatCard
+              key={index}
+              title={stat.title}
+              value={stat.value}
+              icon={stat.icon}
+              iconBgColor={stat.iconBgColor}
+              trend={stat.trend}
+            />
+          ))
+        ) : (
+          // Show empty state if no stats available
+          <Card className="p-6 col-span-full">
+            <p className="text-muted-foreground text-center">No statistics available at this time.</p>
+          </Card>
+        )}
       </div>
 
       {/* Onboarding Progress */}
@@ -166,8 +199,45 @@ export default function Dashboard() {
 
       {/* Recent Activity and Upcoming Appointments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <RecentActivityCard activities={activities} />
-        <AppointmentsCard appointments={appointments} />
+        {activitiesLoading ? (
+          <Card className="p-6">
+            <CardHeader>
+              <SkeletonLoader variant="text" className="w-1/3 mb-2" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Array(3).fill(0).map((_, index) => (
+                <div key={index} className="flex gap-4">
+                  <div className="w-10 h-10 rounded-full bg-gray-700" />
+                  <div className="flex-1 space-y-2">
+                    <SkeletonLoader variant="text" className="w-1/2" />
+                    <SkeletonLoader variant="text" className="w-full" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : (
+          <RecentActivityCard activities={activities} />
+        )}
+        
+        {appointmentsLoading ? (
+          <Card className="p-6">
+            <CardHeader>
+              <SkeletonLoader variant="text" className="w-1/3 mb-2" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Array(2).fill(0).map((_, index) => (
+                <div key={index} className="p-4 border rounded-md space-y-2">
+                  <SkeletonLoader variant="text" className="w-2/3" />
+                  <SkeletonLoader variant="text" className="w-1/3" />
+                  <SkeletonLoader variant="text" className="w-1/2" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ) : (
+          <AppointmentsCard appointments={appointments} />
+        )}
       </div>
       
       {/* Loading Components Showcase */}
