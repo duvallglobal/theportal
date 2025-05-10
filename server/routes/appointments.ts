@@ -3,6 +3,7 @@ import { storage } from "../storage";
 import { z } from "zod";
 import { format } from "date-fns";
 import twilio from "twilio";
+import { InsertCommunicationHistory } from "@shared/schema";
 
 const router = Router();
 
@@ -106,13 +107,17 @@ router.post("/:id/notification", async (req: Request, res: Response) => {
         notificationSent = true;
         
         // Log notification to communication history
-        await storage.createCommunicationHistory({
+        const smsHistoryData: InsertCommunicationHistory = {
           recipientId: appointment.clientId,
           senderId: appointment.adminId,
           content: smsMessage,
           type: "sms",
           status: "sent",
-        });
+          statusMessage: null,
+          subject: null,
+          templateId: null
+        };
+        await storage.createCommunicationHistory(smsHistoryData);
       }
     }
     
