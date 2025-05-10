@@ -499,7 +499,7 @@ export default function VerificationQueue() {
                         </>
                       )}
 
-                      {selectedUser.onboardingStatus !== 'completed' && (
+                      {selectedClient.onboardingStatus !== 'completed' && (
                         <p className="text-muted-foreground">
                           This account has not completed onboarding. Verification can only be
                           performed on accounts that have completed onboarding.
@@ -527,7 +527,7 @@ export default function VerificationQueue() {
             <DialogFooter className="flex justify-between">
               <Button
                 variant="outline"
-                onClick={() => setIsUserDetailOpen(false)}
+                onClick={() => setIsClientDetailOpen(false)}
               >
                 Close
               </Button>
