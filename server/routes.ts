@@ -327,6 +327,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Client terminology version of adding a new user
+  app.post("/api/clients", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      const emailExists = await storage.getUserByEmail(req.body.email);
+      if (emailExists) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      
+      // Use the imported hashPassword function from auth.ts
+      const hashedPassword = await hashPassword(req.body.password);
+      
+      // Create new client
+      const newClient = await storage.createUser({
+        ...req.body,
+        password: hashedPassword,
+        role: "client" // Always set to client role for this endpoint
+      });
+      
+      // Remove password from response
+      const { password, ...clientWithoutPassword } = newClient;
+      
+      res.status(201).json(clientWithoutPassword);
+    } catch (error) {
+      console.error("Error creating client:", error);
+      res.status(500).json({ message: "Failed to create client" });
+    }
+  });
+  
   app.put("/api/users/:id", authMiddleware.isAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
@@ -371,6 +405,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user:", error);
       res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+  
+  // Client terminology version of updating a user
+  app.put("/api/clients/:id", authMiddleware.isAdmin, async (req, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      
+      // Verify client exists
+      const client = await storage.getUser(clientId);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      // If changing username, check if it's unique
+      if (req.body.username && req.body.username !== client.username) {
+        const existingUser = await storage.getUserByUsername(req.body.username);
+        if (existingUser && existingUser.id !== clientId) {
+          return res.status(400).json({ message: "Username already exists" });
+        }
+      }
+      
+      // If changing email, check if it's unique
+      if (req.body.email && req.body.email !== client.email) {
+        const emailExists = await storage.getUserByEmail(req.body.email);
+        if (emailExists && emailExists.id !== clientId) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+      }
+      
+      // Handle password update if provided
+      let updateData = { ...req.body };
+      if (req.body.password) {
+        updateData.password = await hashPassword(req.body.password);
+      } else {
+        delete updateData.password;
+      }
+      
+      // Ensure role remains "client"
+      updateData.role = "client";
+      
+      // Update client
+      const updatedClient = await storage.updateUser(clientId, updateData);
+      
+      // Remove password from response
+      const { password, ...clientWithoutPassword } = updatedClient;
+      
+      res.json(clientWithoutPassword);
+    } catch (error) {
+      console.error("Error updating client:", error);
+      res.status(500).json({ message: "Failed to update client" });
     }
   });
   
@@ -1458,6 +1543,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(clientsInfo);
     } catch (error) {
       console.error("Get clients error:", error);
+    }
+  });
+  
+  // Client terminology version of getting clients-only users
+  app.get("/api/admin/client-list", validateSession, validateAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      const clients = users.filter(user => user.role === "client");
+      
+      // Return only necessary info (don't include password or sensitive data)
+      const clientsInfo = clients.map(client => ({
+        id: client.id,
+        fullName: client.fullName,
+        email: client.email,
+        username: client.username,
+        phone: client.phone,
+        verificationStatus: client.verificationStatus
+      }));
+      
+      res.json(clientsInfo);
+    } catch (error) {
+      console.error("Get client list error:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });
