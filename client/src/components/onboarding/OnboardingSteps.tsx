@@ -99,7 +99,7 @@ const legalSchema = z.object({
 });
 
 export function OnboardingSteps() {
-  const [currentStep, setCurrentStep] = useState(6); // Starting from verification step
+  const [currentStep, setCurrentStep] = useState(1); // Starting from first step
   const [idFrontFile, setIdFrontFile] = useState<File | null>(null);
   const [idBackFile, setIdBackFile] = useState<File | null>(null);
   const [selfieFile, setSelfieFile] = useState<File | null>(null);
@@ -173,6 +173,596 @@ export function OnboardingSteps() {
     }
   };
 
+  // Render identity step content
+  const renderIdentityStep = () => {
+    return (
+      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Step 1: Identity</h2>
+        <p className="text-gray-400 mb-6">Let's start with some basic information about you.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="fullName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Full Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter your full name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="dateOfBirth"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Date of Birth</FormLabel>
+                <FormControl>
+                  <Input type="date" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="Enter your email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone Number</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter your phone number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-end mt-8">
+          <Button type="button" onClick={form.handleSubmit(onSubmit)}>
+            Next <span className="ml-2">→</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render account access step content
+  const renderAccountAccessStep = () => {
+    return (
+      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Step 2: Account Access</h2>
+        <p className="text-gray-400 mb-6">Provide your social media and platform credentials so we can help manage your content.</p>
+        
+        <div className="space-y-6">
+          <div className="border-b border-background-lighter pb-6">
+            <h3 className="text-lg font-medium text-white mb-4">OnlyFans Access</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="onlyFansUsername"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>OnlyFans Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your OnlyFans username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="onlyFansPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>OnlyFans Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="Your OnlyFans password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            
+            <FormField
+              control={form.control}
+              name="needsOnlyFansCreation"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 mt-4">
+                  <FormControl>
+                    <Checkbox 
+                      checked={field.value} 
+                      onCheckedChange={field.onChange} 
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>I don't have an OnlyFans account and need help creating one</FormLabel>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </div>
+          
+          <div className="pt-4">
+            <h3 className="text-lg font-medium text-white mb-4">Other Social Media Platforms</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="instagramUsername"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instagram Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your Instagram username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="tiktokUsername"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>TikTok Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your TikTok username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="twitterUsername"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Twitter Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Your Twitter username" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="preferredHandles"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred Social Media Handles</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Handles you'd like to use" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={goToPreviousStep}
+          >
+            <span className="mr-2">←</span> Previous
+          </Button>
+          <Button type="button" onClick={form.handleSubmit(onSubmit)}>
+            Next <span className="ml-2">→</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render brand strategy step content
+  const renderBrandStrategyStep = () => {
+    return (
+      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Step 3: Brand Strategy</h2>
+        <p className="text-gray-400 mb-6">Help us understand your brand and content style preferences.</p>
+        
+        <div className="space-y-6">
+          <FormField
+            control={form.control}
+            name="growthGoals"
+            render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel>Growth Goals</FormLabel>
+                  <p className="text-gray-400 text-sm">Select all that apply to your goals</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['More subscribers', 'Higher engagement', 'Increased visibility', 'Better content quality', 'Cross-platform growth', 'Monetization opportunities'].map((goal) => (
+                    <FormField
+                      key={goal}
+                      control={form.control}
+                      name="growthGoals"
+                      render={({ field }) => {
+                        return (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(goal)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...(field.value || []), goal])
+                                    : field.onChange(field.value?.filter((value) => value !== goal) || []);
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {goal}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="contentTypes"
+            render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel>Content Types</FormLabel>
+                  <p className="text-gray-400 text-sm">What types of content are you interested in creating?</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['Photos', 'Videos', 'Stories/Reels', 'Live streams', 'Text posts', 'Audio content'].map((type) => (
+                    <FormField
+                      key={type}
+                      control={form.control}
+                      name="contentTypes"
+                      render={({ field }) => {
+                        return (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(type)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...(field.value || []), type])
+                                    : field.onChange(field.value?.filter((value) => value !== type) || []);
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {type}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="brandDescription"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Describe Your Brand</FormLabel>
+                <FormControl>
+                  <Input placeholder="E.g., authentic, edgy, luxurious, etc." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="voiceTone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Voice Tone</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your preferred voice tone" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="playful">Playful & Fun</SelectItem>
+                    <SelectItem value="seductive">Seductive & Mysterious</SelectItem>
+                    <SelectItem value="professional">Professional & Polished</SelectItem>
+                    <SelectItem value="casual">Casual & Friendly</SelectItem>
+                    <SelectItem value="authoritative">Authoritative & Confident</SelectItem>
+                    <SelectItem value="authentic">Raw & Authentic</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="doNotSayTerms"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Do Not Say Terms</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="List any terms or phrases you'd like to avoid in your content" 
+                    className="min-h-[100px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={goToPreviousStep}
+          >
+            <span className="mr-2">←</span> Previous
+          </Button>
+          <Button type="button" onClick={form.handleSubmit(onSubmit)}>
+            Next <span className="ml-2">→</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render communication step content
+  const renderCommunicationStep = () => {
+    return (
+      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Step 4: Communication</h2>
+        <p className="text-gray-400 mb-6">Let us know your communication preferences for managing your accounts.</p>
+        
+        <div className="space-y-6">
+          <FormField
+            control={form.control}
+            name="notificationPreferences"
+            render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel>Notification Preferences</FormLabel>
+                  <p className="text-gray-400 text-sm">How would you like to receive notifications?</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['Email', 'SMS/Text', 'In-app notifications', 'Phone call'].map((method) => (
+                    <FormField
+                      key={method}
+                      control={form.control}
+                      name="notificationPreferences"
+                      render={({ field }) => {
+                        return (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(method)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...(field.value || []), method])
+                                    : field.onChange(field.value?.filter((value) => value !== method) || []);
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {method}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="bestContactMethod"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Best Contact Method</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your preferred contact method" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="sms">SMS/Text</SelectItem>
+                    <SelectItem value="call">Phone Call</SelectItem>
+                    <SelectItem value="app">In-App Messaging</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="telegram">Telegram</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="preferredCheckInTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Preferred Check-In Time</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your preferred time for check-ins" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="morning">Morning (8AM - 11AM)</SelectItem>
+                    <SelectItem value="midday">Midday (11AM - 2PM)</SelectItem>
+                    <SelectItem value="afternoon">Afternoon (2PM - 5PM)</SelectItem>
+                    <SelectItem value="evening">Evening (5PM - 8PM)</SelectItem>
+                    <SelectItem value="night">Night (8PM - 11PM)</SelectItem>
+                    <SelectItem value="weekly">Weekly Only</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="timezone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Your Timezone</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your timezone" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="ET">Eastern Time (ET)</SelectItem>
+                    <SelectItem value="CT">Central Time (CT)</SelectItem>
+                    <SelectItem value="MT">Mountain Time (MT)</SelectItem>
+                    <SelectItem value="PT">Pacific Time (PT)</SelectItem>
+                    <SelectItem value="GMT">Greenwich Mean Time (GMT)</SelectItem>
+                    <SelectItem value="CET">Central European Time (CET)</SelectItem>
+                    <SelectItem value="IST">India Standard Time (IST)</SelectItem>
+                    <SelectItem value="JST">Japan Standard Time (JST)</SelectItem>
+                    <SelectItem value="AEST">Australian Eastern Standard Time (AEST)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={goToPreviousStep}
+          >
+            <span className="mr-2">←</span> Previous
+          </Button>
+          <Button type="button" onClick={form.handleSubmit(onSubmit)}>
+            Next <span className="ml-2">→</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render content strategy step content
+  const renderContentStrategyStep = () => {
+    return (
+      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Step 5: Content Strategy</h2>
+        <p className="text-gray-400 mb-6">Let's plan your content creation and publishing schedule.</p>
+        
+        <div className="space-y-6">
+          <FormField
+            control={form.control}
+            name="uploadFrequency"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Upload Frequency</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="How often would you like to post new content?" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="2-3x-week">2-3 Times per Week</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="biweekly">Bi-Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="existingContent"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Existing Content</FormLabel>
+                <FormControl>
+                  <Textarea 
+                    placeholder="Describe any existing content you already have or ideas you want to implement" 
+                    className="min-h-[150px]"
+                    {...field} 
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={goToPreviousStep}
+          >
+            <span className="mr-2">←</span> Previous
+          </Button>
+          <Button type="button" onClick={form.handleSubmit(onSubmit)}>
+            Next <span className="ml-2">→</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   // Render verification step content
   const renderVerificationStep = () => {
     return (
@@ -219,6 +809,284 @@ export function OnboardingSteps() {
             disabled={!idFrontFile || !idBackFile || !selfieFile}
           >
             Next <span className="ml-2">→</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render concierge step content
+  const renderConciergeStep = () => {
+    return (
+      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Step 7: Concierge Services</h2>
+        <p className="text-gray-400 mb-6">Configure your preferences for in-person appointments and client interactions.</p>
+        
+        <div className="space-y-6">
+          <FormField
+            control={form.control}
+            name="geographicAvailability"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Geographic Availability</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Describe where you are available for in-person appointments (cities, regions, etc.)"
+                    className="min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="minimumRate"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Minimum Appointment Rate</FormLabel>
+                <FormControl>
+                  <Input placeholder="Minimum rate for in-person appointments" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="clientScreeningPreferences"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Client Screening Preferences</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Describe your client screening preferences and requirements"
+                    className="min-h-[100px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="servicesOffered"
+            render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel>Services Offered</FormLabel>
+                  <p className="text-gray-400 text-sm">Select all services you're willing to provide</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['Private meetings', 'Travel companionship', 'Event attendance', 'Extended bookings', 'Photoshoots', 'Video creation'].map((service) => (
+                    <FormField
+                      key={service}
+                      control={form.control}
+                      name="servicesOffered"
+                      render={({ field }) => {
+                        return (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(service)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...(field.value || []), service])
+                                    : field.onChange(field.value?.filter((value) => value !== service) || []);
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {service}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="approvalProcess"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Booking Approval Process</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your preferred approval process" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual Approval (Review each request)</SelectItem>
+                    <SelectItem value="auto-verified">Auto-approve Verified Clients</SelectItem>
+                    <SelectItem value="auto-all">Auto-approve All Requests</SelectItem>
+                    <SelectItem value="manager">Manager Pre-approval</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="bookingSummaryPreferences"
+            render={() => (
+              <FormItem>
+                <div className="mb-4">
+                  <FormLabel>Booking Summary Preferences</FormLabel>
+                  <p className="text-gray-400 text-sm">What information would you like to see in your booking summaries?</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {['Client name', 'Client contact info', 'Location details', 'Duration', 'Payment details', 'Client requests', 'Meeting notes'].map((preference) => (
+                    <FormField
+                      key={preference}
+                      control={form.control}
+                      name="bookingSummaryPreferences"
+                      render={({ field }) => {
+                        return (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value?.includes(preference)}
+                                onCheckedChange={(checked) => {
+                                  return checked
+                                    ? field.onChange([...(field.value || []), preference])
+                                    : field.onChange(field.value?.filter((value) => value !== preference) || []);
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {preference}
+                            </FormLabel>
+                          </FormItem>
+                        );
+                      }}
+                    />
+                  ))}
+                </div>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={goToPreviousStep}
+          >
+            <span className="mr-2">←</span> Previous
+          </Button>
+          <Button type="button" onClick={form.handleSubmit(onSubmit)}>
+            Next <span className="ml-2">→</span>
+          </Button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Render legal step content
+  const renderLegalStep = () => {
+    return (
+      <div className="bg-background-card rounded-xl shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-white mb-4">Step 8: Legal & Consent</h2>
+        <p className="text-gray-400 mb-6">Please review and agree to the following legal terms and conditions.</p>
+        
+        <div className="space-y-6">
+          <div className="bg-background-lighter p-4 rounded-lg mb-6">
+            <p className="text-sm text-gray-400 mb-4">
+              By using our services, you agree to the following terms and conditions:
+            </p>
+            <ul className="list-disc pl-5 space-y-2 text-sm text-gray-400">
+              <li>You authorize ManageTheFans to create, manage, and post content on your behalf on the indicated platforms.</li>
+              <li>You are responsible for ensuring all content complies with the terms of service of each platform.</li>
+              <li>You are responsible for keeping backup copies of your credentials and content.</li>
+              <li>ManageTheFans is not responsible for platform-specific issues, account suspensions, or content removals.</li>
+              <li>You agree to provide accurate information and to keep your contact details up to date.</li>
+              <li>ManageTheFans will use your information only as described in our Privacy Policy.</li>
+            </ul>
+          </div>
+          
+          <FormField
+            control={form.control}
+            name="authorizeManagement"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox 
+                    checked={field.value} 
+                    onCheckedChange={field.onChange} 
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>I authorize ManageTheFans to manage my accounts and post content on my behalf</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="backupResponsibility"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox 
+                    checked={field.value} 
+                    onCheckedChange={field.onChange} 
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>I understand that I am responsible for maintaining backups of my content</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+          
+          <FormField
+            control={form.control}
+            name="agreeToTerms"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox 
+                    checked={field.value} 
+                    onCheckedChange={field.onChange} 
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>I have read and agree to the Terms of Service and Privacy Policy</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
+        
+        <div className="flex justify-between mt-8">
+          <Button
+            variant="outline"
+            onClick={goToPreviousStep}
+          >
+            <span className="mr-2">←</span> Previous
+          </Button>
+          <Button 
+            type="button" 
+            onClick={form.handleSubmit(onSubmit)}
+            disabled={!form.watch('authorizeManagement') || !form.watch('backupResponsibility') || !form.watch('agreeToTerms')}
+          >
+            Complete Onboarding
           </Button>
         </div>
       </div>
@@ -276,7 +1144,14 @@ export function OnboardingSteps() {
       {/* Current Step Content */}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)}>
+          {currentStep === 1 && renderIdentityStep()}
+          {currentStep === 2 && renderAccountAccessStep()}
+          {currentStep === 3 && renderBrandStrategyStep()}
+          {currentStep === 4 && renderCommunicationStep()}
+          {currentStep === 5 && renderContentStrategyStep()}
           {currentStep === 6 && renderVerificationStep()}
+          {currentStep === 7 && renderConciergeStep()}
+          {currentStep === 8 && renderLegalStep()}
         </form>
       </Form>
     </>

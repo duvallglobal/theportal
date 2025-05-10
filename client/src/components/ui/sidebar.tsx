@@ -125,11 +125,7 @@ export function Sidebar({
       path: "/profile",
       icon: <User className="w-5 h-5 mr-3" />,
     },
-    {
-      name: "Brand & Strategy",
-      path: "/brand-strategy",
-      icon: <Target className="w-5 h-5 mr-3" />,
-    },
+
     {
       name: "Content Upload",
       path: "/content-upload",
