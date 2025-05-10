@@ -42,13 +42,23 @@ export default function TemplateManagement() {
   });
 
   // Fetch templates
-  const { data: templates = [], isLoading } = useQuery({
+  const { data: templates = [], isLoading } = useQuery<CommunicationTemplate[]>({
     queryKey: ["/api/communication-templates"]
   });
 
+  type TemplateFormData = {
+    id?: number;
+    name: string;
+    type: string;
+    category: string;
+    subject: string;
+    content: string;
+    isDefault: boolean;
+  };
+
   // Mutations
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+  const createMutation = useMutation<CommunicationTemplate, Error, TemplateFormData>({
+    mutationFn: async (data) => {
       const res = await apiRequest("POST", "/api/communication-templates", data);
       return res.json();
     },
@@ -61,17 +71,17 @@ export default function TemplateManagement() {
       resetForm();
       setIsDialogOpen(false);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to create communication template",
+        description: `Failed to create communication template: ${error.message}`,
         variant: "destructive"
       });
     }
   });
 
-  const updateMutation = useMutation({
-    mutationFn: async (data: any) => {
+  const updateMutation = useMutation<CommunicationTemplate, Error, TemplateFormData>({
+    mutationFn: async (data) => {
       const res = await apiRequest("PUT", `/api/communication-templates/${data.id}`, data);
       return res.json();
     },
@@ -84,19 +94,18 @@ export default function TemplateManagement() {
       resetForm();
       setIsDialogOpen(false);
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to update communication template",
+        description: `Failed to update communication template: ${error.message}`,
         variant: "destructive"
       });
     }
   });
 
-  const deleteMutation = useMutation({
+  const deleteMutation = useMutation<Response, Error, number>({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/communication-templates/${id}`);
-      return res;
+      return await apiRequest("DELETE", `/api/communication-templates/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/communication-templates"] });
@@ -105,10 +114,10 @@ export default function TemplateManagement() {
         description: "Communication template deleted successfully",
       });
     },
-    onError: () => {
+    onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to delete communication template",
+        description: `Failed to delete communication template: ${error.message}`,
         variant: "destructive"
       });
     }
@@ -183,7 +192,7 @@ export default function TemplateManagement() {
   };
 
   // Filter templates
-  const filteredTemplates = templates.filter((template: any) => {
+  const filteredTemplates = Array.isArray(templates) ? templates.filter((template: CommunicationTemplate) => {
     const matchesTab = selectedTab === "all" || template.type === selectedTab;
     const matchesSearch = 
       searchTerm === "" || 
@@ -193,7 +202,7 @@ export default function TemplateManagement() {
       template.content.toLowerCase().includes(searchTerm.toLowerCase());
     
     return matchesTab && matchesSearch;
-  });
+  }) : [];
 
   // Helper for icon rendering
   const renderTypeIcon = (type: string) => {
@@ -282,7 +291,7 @@ export default function TemplateManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTemplates.map((template: any) => (
+                    {filteredTemplates.map((template: CommunicationTemplate) => (
                       <TableRow key={template.id}>
                         <TableCell className="font-medium">{template.name}</TableCell>
                         <TableCell>
@@ -304,9 +313,9 @@ export default function TemplateManagement() {
                         </TableCell>
                         <TableCell>
                           {template.isDefault && (
-                            <Badge variant="outline" className="bg-green-100 text-green-800">
+                            <Badge variant="secondary" className="flex items-center space-x-1">
                               <CheckCircle className="mr-1 h-3 w-3" />
-                              Default
+                              <span>Default</span>
                             </Badge>
                           )}
                         </TableCell>
@@ -430,7 +439,7 @@ export default function TemplateManagement() {
                   onChange={handleFormChange}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Use variables like &#123;&#123;name&#125;&#125;, &#123;&#123;appointmentDate&#125;&#125;, &#123;&#123;time&#125;&#125; that will be replaced with actual values.
+                  Use variables like &#123;&#123;name&#125;&#125;, &#123;&#123;appointmentDate&#125;&#125;, or &#123;&#123;appointmentTime&#125;&#125; that will be replaced with actual values.
                 </p>
               </div>
 
