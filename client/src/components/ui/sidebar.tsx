@@ -43,13 +43,15 @@ export function Sidebar({
   const [location] = useLocation();
   
   // Fetch notifications to get unread count
-  const { data: notifications } = useQuery({
+  const { data: notifications = [] } = useQuery({
     queryKey: ['/api/notifications'],
     enabled: !!user, // Only fetch when user is logged in
   });
   
   // Count unread notifications
-  const unreadCount = notifications ? notifications.filter((n: any) => !n.isRead).length : 0;
+  const unreadCount = Array.isArray(notifications) 
+    ? notifications.filter((n: any) => !n.isRead).length 
+    : 0;
 
   // Define admin navigation items
   const adminNavItems = [

@@ -1783,28 +1783,16 @@ export class PgStorage implements IStorage {
   
   async getNotificationsByUserId(userId: number): Promise<Notification[]> {
     try {
-      // Directly try to execute the query - we know the table exists now
-      const result = await this.db.execute(
-        `SELECT 
-          id, 
-          recipient_id as "recipientId", 
-          type, 
-          title, 
-          content, 
-          link, 
-          is_read as "isRead", 
-          created_at as "createdAt" 
-        FROM notifications 
-        WHERE recipient_id = $1 
-        ORDER BY created_at DESC`,
-        [userId]
+      // First check if the notifications table exists
+      const tableCheck = await this.db.execute(
+        `SELECT EXISTS (
+           SELECT FROM information_schema.tables 
+           WHERE table_name = 'notifications'
+         );`
       );
       
-      return result.rows as Notification[];
-    } catch (error) {
-      // Check if the error indicates the table doesn't exist
-      if (error instanceof Error && 
-          error.message.includes('relation "notifications" does not exist')) {
+      const tableExists = tableCheck.rows[0].exists;
+      if (!tableExists) {
         console.log('Creating notifications table as it does not exist');
         
         // Create the notifications table
@@ -1826,6 +1814,25 @@ export class PgStorage implements IStorage {
         return [];
       }
       
+      // Execute the query now that we know the table exists
+      const result = await this.db.execute(
+        `SELECT 
+          id, 
+          recipient_id as "recipientId", 
+          type, 
+          title, 
+          content, 
+          link, 
+          is_read as "isRead", 
+          created_at as "createdAt" 
+        FROM notifications 
+        WHERE recipient_id = $1 
+        ORDER BY created_at DESC`,
+        [userId]
+      );
+      
+      return result.rows as Notification[];
+    } catch (error) {
       console.error('Error getting notifications by user ID:', error);
       return [];
     }
