@@ -21,7 +21,7 @@ declare global {
       fullName: string;
       phone: string | null;
       role: string;
-      password: string;
+      password?: string; // Make password optional so it can be removed
       onboardingStatus: string | null;
       onboardingStep: number | null;
       plan: string | null;
@@ -257,7 +257,10 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
-    res.json(req.user);
+    
+    // Return user data without the password
+    const { password, ...safeUserData } = req.user;
+    res.json(safeUserData);
   });
 
   // Export middleware functions for route-specific auth
@@ -266,6 +269,13 @@ export function setupAuth(app: Express) {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: "Unauthorized" });
       }
+      
+      // Remove password from req.user to prevent it from being used in subsequent handlers
+      if (req.user) {
+        const { password, ...safeUserData } = req.user;
+        req.user = safeUserData as Express.User;
+      }
+      
       next();
     },
     
@@ -276,6 +286,12 @@ export function setupAuth(app: Express) {
       
       if (req.user?.role !== "admin") {
         return res.status(403).json({ message: "Forbidden: Admin access required" });
+      }
+      
+      // Remove password from req.user to prevent it from being used in subsequent handlers
+      if (req.user) {
+        const { password, ...safeUserData } = req.user;
+        req.user = safeUserData as Express.User;
       }
       
       next();
